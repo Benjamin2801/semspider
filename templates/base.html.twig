@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale }}">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}{{ 'meta.title'|trans }}{% endblock %}</title>
+        <meta name="description" content="{% block description %}{{ 'meta.description'|trans }}{% endblock %}">
+        {% set route = app.request.attributes.get('_route') %}
+        {% set route_params = app.request.attributes.get('_route_params', {}) %}
+        {% block alternates %}
+        {% if route %}
+            {% for locale in app.enabled_locales %}
+                <link rel="alternate" hreflang="{{ locale }}" href="{{ url(route, route_params|merge({_locale: locale})) }}">
+            {% endfor %}
+            <link rel="alternate" hreflang="x-default" href="{{ url(route, route_params|merge({_locale: app.enabled_locales|first})) }}">
+        {% endif %}
+        {% endblock %}
+        {% block head_extra %}{% endblock %}
+        <script>
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('theme')
+                    ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            } catch {}
+        </script>
+        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+        <script src="{{ asset('js/app.js') }}" defer></script>
+    </head>
+    <body>
+        <header class="site-header">
+            <a class="brand" href="{{ path('home', {_locale: app.request.locale}) }}" aria-label="Net Labs SemSpider">
+                <span class="brand-org">Net Labs</span>
+                <span class="brand-name">Sem<span class="brand-accent">Spider</span></span>
+            </a>
+            <div class="header-tools">
+                {% if route %}
+                    <nav class="lang-switch" aria-label="{{ 'nav.language'|trans }}">
+                        {% for locale in app.enabled_locales %}
+                            <a href="{{ path(route, route_params|merge(app.request.query.all)|merge({_locale: locale})) }}" hreflang="{{ locale }}"{% if locale == app.request.locale %} aria-current="true"{% endif %}>{{ locale|upper }}</a>
+                        {% endfor %}
+                    </nav>
+                {% endif %}
+                <button type="button" class="theme-toggle" data-theme-toggle hidden aria-label="{{ 'nav.theme'|trans }}" title="{{ 'nav.theme'|trans }}">
+                    {{ include('_partials/_icon.svg.twig', {name: 'moon', class: 'icon-moon', size: 16}) }}
+                    {{ include('_partials/_icon.svg.twig', {name: 'sun', class: 'icon-sun', size: 16}) }}
+                </button>
+            </div>
+        </header>
+
+        <main class="container">
+            {% block body %}{% endblock %}
+        </main>
+
+        <footer class="site-footer">
+            <p>
+                {{ 'footer.tagline'|trans }}
+                <span aria-hidden="true">·</span>
+                <a href="{{ path('legal', {_locale: app.request.locale}) }}">{{ 'legal.title'|trans }}</a>
+            </p>
+        </footer>
+    </body>
+</html>

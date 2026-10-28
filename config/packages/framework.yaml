@@ -1,0 +1,15 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Pas de comptes : aucune session n'est nécessaire.
+    session: false
+
+    # Incrémenter pour forcer les navigateurs à recharger CSS et JS après un déploiement.
+    assets:
+        version: '6'
+        version_format: '%%s?v=%%s'
+
+when@test:
+    framework:
+        test: true

@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'legal.title'|trans }} — SemSpider{% endblock %}
+
+{% block body %}
+    <article class="prose">
+        <h1>{{ 'legal.title'|trans }}</h1>
+
+        <h2>{{ 'legal.publisher.heading'|trans }}</h2>
+        <p>
+            {{ publisher.name }}<br>
+            {{ publisher.address }}<br>
+            {% if publisher.siren %}{{ 'legal.publisher.siren'|trans({'%siren%': publisher.siren}) }}<br>{% endif %}
+            {% if publisher.contact %}{{ 'legal.publisher.contact'|trans }} <a href="mailto:{{ publisher.contact }}">{{ publisher.contact }}</a>{% endif %}
+        </p>
+
+        <h2>{{ 'legal.host.heading'|trans }}</h2>
+        <p>{{ 'legal.host.text'|trans|raw }}</p>
+
+        <h2>{{ 'legal.data.heading'|trans }}</h2>
+        <p>{{ 'legal.data.no_account'|trans }}</p>
+        <p>{{ 'legal.data.third_parties'|trans }}</p>
+
+        <h2>{{ 'legal.ip.heading'|trans }}</h2>
+        <p>{{ 'legal.ip.text'|trans }}</p>
+    </article>
+{% endblock %}

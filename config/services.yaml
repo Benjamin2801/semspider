@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+    # Exigence de route pour {_locale}, Ã  garder alignÃ©e avec framework.enabled_locales.
+    app.locales: 'fr|en'
+
+    # Pages analysÃ©es au plus par crawl.
+    app.crawl.max_pages: 500
+    # Pages analysÃ©es par requÃªte : le navigateur enchaÃ®ne les lots, chacun bien en dessous des 165 s d'OVH.
+    app.crawl.batch_size: 4
+    # Ressources mesurÃ©es au plus par page (images, CSS, JS, polices).
+    app.crawl.max_resources: 150
+    app.crawl.user_agent: 'SemSpider/1.0 (+https://net-labs.fr/semspider)'
+
+    # Ã‰diteur affichÃ© dans les mentions lÃ©gales (variables LEGAL_* de .env.local / deploy/prod.env).
+    app.legal:
+        name: '%env(LEGAL_PUBLISHER)%'
+        address: '%env(LEGAL_ADDRESS)%'
+        siren: '%env(LEGAL_SIREN)%'
+        contact: '%env(LEGAL_CONTACT)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            array $enabledLocales: '%kernel.enabled_locales%'
+            int $maxPages: '%app.crawl.max_pages%'
+            int $batchSize: '%app.crawl.batch_size%'
+
+    App\:
+        resource: '../src/'
+
+    # L'adresse Ã  crawler vient de l'internaute : aucune requÃªte ne doit atteindre le rÃ©seau privÃ© du serveur
+    # (127.0.0.1, 10.x, 192.168.xâ€¦), mÃªme aprÃ¨s une redirection ou un nom de domaine qui y mÃ¨ne.
+    app.crawl.http_client:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        arguments: ['@http_client']
+    Symfony\Contracts\HttpClient\HttpClientInterface $siteClient: '@app.crawl.http_client'
+
+when@test:
+    services:
+        # Le faux site n'a pas d'adresse IP : pas de vÃ©rification rÃ©seau pendant les tests (voir NetworkGuardTest).
+        app.crawl.http_client:
+            alias: http_client
+
+        App\Tests\Http\FakeSite:
+            public: true

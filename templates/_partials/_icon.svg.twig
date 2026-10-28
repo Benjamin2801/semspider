@@ -1,0 +1,25 @@
+<svg class="icon{{ class is defined ? ' ' ~ class }}" viewBox="0 0 16 16" width="{{ size ?? 13 }}" height="{{ size ?? 13 }}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    {%- if name == 'download' -%}
+        <path d="M8 2.5v8m-3.5-3.5L8 10.5l3.5-3.5M3 13.5h10"/>
+    {%- elseif name == 'sun' -%}
+        <circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>
+    {%- elseif name == 'moon' -%}
+        <path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"/>
+    {%- elseif name == 'clock' -%}
+        <circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.4"/>
+    {%- elseif name == 'weight' -%}
+        <path d="M4.5 5.5h7l1.5 8h-10Z"/><circle cx="8" cy="3.5" r="1.5"/>
+    {%- elseif name == 'tag' -%}
+        <path d="M2.5 8.2V3a.5.5 0 0 1 .5-.5h5.2l5.3 5.3a1 1 0 0 1 0 1.4l-4.1 4.1a1 1 0 0 1-1.4 0Z"/><circle cx="5.5" cy="5.5" r="1"/>
+    {%- elseif name == 'sitemap' -%}
+        <rect x="6" y="1.8" width="4" height="3.4" rx=".6"/><rect x="1.8" y="10.8" width="4" height="3.4" rx=".6"/><rect x="10.2" y="10.8" width="4" height="3.4" rx=".6"/><path d="M8 5.2v2.8M3.8 10.8V8h8.4v2.8"/>
+    {%- elseif name == 'pause' -%}
+        <path d="M5.5 3.5v9M10.5 3.5v9"/>
+    {%- elseif name == 'play' -%}
+        <path d="M5 3.2v9.6L12.5 8Z"/>
+    {%- elseif name == 'stop' -%}
+        <rect x="4" y="4" width="8" height="8" rx="1"/>
+    {%- elseif name == 'arrow' -%}
+        <path d="M3 8h10m-4-4 4 4-4 4"/>
+    {%- endif -%}
+</svg>

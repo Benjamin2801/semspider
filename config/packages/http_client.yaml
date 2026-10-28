@@ -1,0 +1,16 @@
+framework:
+    http_client:
+        # Toutes les requêtes vont au même site : au-delà de 6 connexions, un petit hébergement ralentit
+        # et les temps mesurés ne veulent plus rien dire.
+        max_host_connections: 6
+        default_options:
+            headers:
+                User-Agent: '%app.crawl.user_agent%'
+            max_redirects: 0
+            timeout: 10
+            max_duration: 15
+
+when@test:
+    framework:
+        http_client:
+            mock_response_factory: App\Tests\Http\FakeSite

@@ -1,0 +1,9 @@
+.git
+.github
+vendor
+var
+build
+.env.local
+.env.*.local
+deploy/prod.env
+docs

@@ -1,0 +1,9 @@
+services:
+    app:
+        build: .
+        ports:
+            - '8000:8000'
+        volumes:
+            - .:/app
+            # Les dépendances installées dans l'image restent celles du conteneur.
+            - /app/vendor

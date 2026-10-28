@@ -1,0 +1,2 @@
+# Le code de l'application (et ses secrets) n'est jamais accessible depuis le web.
+Require all denied

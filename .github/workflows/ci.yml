@@ -1,0 +1,48 @@
+name: CI
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    check:
+        name: Style, analyse statique et tests
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            # Même version de PHP que l'hébergement de production.
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.2'
+                  coverage: none
+
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.composer/cache
+                  key: composer-${{ hashFiles('composer.lock') }}
+
+            - run: composer install --no-interaction --no-progress
+
+            # Aucun appel réseau : les tests remplacent le site crawlé par de fausses réponses.
+            - run: composer check
+
+    docker:
+        name: Image Docker
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - run: docker build -t semspider .
+
+            # L'image doit démarrer et servir la page d'accueil.
+            - run: |
+                  docker run -d --name semspider -p 8000:8000 semspider
+                  for i in $(seq 1 20); do
+                      curl -fsS http://localhost:8000/fr > /dev/null && exit 0
+                      sleep 1
+                  done
+                  docker logs semspider
+                  exit 1

@@ -1,0 +1,10 @@
+<form class="crawl-form" method="get" action="{{ path('crawl', {_locale: app.request.locale}) }}">
+    <label class="visually-hidden" for="url">{{ 'form.url_label'|trans }}</label>
+    <input id="url" name="url" type="text" inputmode="url" required maxlength="2048" autocomplete="url" spellcheck="false"
+           value="{{ url ?? '' }}" placeholder="{{ 'form.url_placeholder'|trans }}"
+           {% if error is defined %}aria-invalid="true" aria-describedby="url-error"{% endif %}>
+    <button type="submit">{{ 'form.submit'|trans }}</button>
+</form>
+{% if error is defined %}
+    <p id="url-error" class="form-error" role="alert">{{ ('crawl.error.' ~ error.reason)|trans({'%status%': error.status}) }}</p>
+{% endif %}

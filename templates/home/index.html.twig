@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block alternates %}{% if error is not defined %}{{ parent() }}{% endif %}{% endblock %}
+
+{% block head_extra %}
+    {% if error is defined %}<meta name="robots" content="noindex">{% endif %}
+{% endblock %}
+
+{% block body %}
+    <section class="hero">
+        <h1>{{ 'home.title'|trans|e|replace({'[': '<mark>', ']': '</mark>'})|raw }}</h1>
+        <p class="lead">{{ 'home.lead'|trans({'%max%': max_pages}) }}</p>
+        {{ include('crawl/_form.html.twig') }}
+    </section>
+
+    <section class="home-section" aria-labelledby="measures-title">
+        <h2 id="measures-title" class="home-kicker">{{ 'home.measures.title'|trans }}</h2>
+        <div class="measures">
+            {% for key, icon in {performance: 'clock', seo: 'tag', site: 'sitemap'} %}
+                <article class="measure-card">
+                    <h3>{{ include('_partials/_icon.svg.twig', {name: icon, size: 16}) }} {{ ('home.measures.' ~ key ~ '.title')|trans }}</h3>
+                    <p>{{ ('home.measures.' ~ key ~ '.text')|trans }}</p>
+                </article>
+            {% endfor %}
+        </div>
+        <p class="home-note">{{ 'home.note'|trans }}</p>
+    </section>
+{% endblock %}

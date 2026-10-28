@@ -1,0 +1,15 @@
+# Front controller de SemSpider, servi depuis un sous-dossier.
+DirectoryIndex index.php
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Calcule le préfixe du dossier (ex. /semspider) sans le coder en dur.
+    RewriteCond %{REQUEST_URI}::$0 ^(/.+)/(.*)::\2$
+    RewriteRule .* - [E=BASE:%1]
+
+    # Les fichiers statiques existants (css, favicon) sont servis directement.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ %{ENV:BASE}/index.php [L]
+</IfModule>

@@ -1,0 +1,5 @@
+framework:
+    cache:
+        # robots.txt des sites (1 h) et mesures des ressources partagées entre les pages (CSS, JS, polices).
+        # Stockés dans des fichiers sous var/share/, conservés entre deux déploiements.
+        prefix_seed: semspider

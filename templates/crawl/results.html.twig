@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% set host = site.root|split('/')[2] %}
+
+{% block title %}{{ 'crawl.title'|trans({'%host%': host}) }} — SemSpider{% endblock %}
+
+{% block alternates %}{% endblock %}
+
+{% block head_extra %}
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block body %}
+    <section class="crawl" data-crawl data-filename="semspider-{{ host }}.csv">
+        <header class="crawl-header">
+            <div>
+                <h1>{{ 'crawl.title'|trans({'%host%': host}) }}</h1>
+                <p class="crawl-meta">
+                    <a href="{{ site.root }}" rel="nofollow noopener" target="_blank">{{ site.root }}</a>
+                    <span aria-hidden="true">·</span>
+                    {{ 'crawl.sitemap'|trans({'%count%': site.sitemapPages|length}) }}
+                    <span aria-hidden="true">·</span>
+                    {{ 'crawl.limit'|trans({'%max%': max_pages}) }}
+                </p>
+            </div>
+            <a class="button-secondary" href="{{ path('home', {_locale: app.request.locale}) }}">{{ 'crawl.new'|trans }}</a>
+        </header>
+
+        <div class="crawl-progress">
+            <div class="progress-bar" aria-hidden="true"><span data-progress></span></div>
+            <p class="crawl-status" data-status role="status" aria-live="polite"></p>
+            <div class="crawl-controls">
+                <button type="button" class="button-secondary is-small" data-pause hidden>
+                    {{ include('_partials/_icon.svg.twig', {name: 'pause'}) }}{{ include('_partials/_icon.svg.twig', {name: 'play'}) }}<span></span>
+                </button>
+                <button type="button" class="button-secondary is-small is-stop" data-stop hidden>
+                    {{ include('_partials/_icon.svg.twig', {name: 'stop'}) }}<span>{{ 'js.stop'|trans }}</span>
+                </button>
+            </div>
+        </div>
+
+        <noscript><p class="form-error">{{ 'crawl.noscript'|trans }}</p></noscript>
+
+        <div class="synthesis" data-synthesis></div>
+
+        <div class="table-tools">
+            <input type="search" class="table-search" data-search placeholder="{{ 'js.search'|trans }}" aria-label="{{ 'js.search'|trans }}">
+            <select class="table-filter" data-filter aria-label="{{ 'js.filter.all'|trans }}"></select>
+            <button type="button" class="button-secondary is-csv" data-csv>
+                {{ include('_partials/_icon.svg.twig', {name: 'download'}) }}{{ 'crawl.export_csv'|trans }}
+            </button>
+        </div>
+
+        <div class="table-wrap">
+            <table class="pages-table">
+                <thead data-head></thead>
+                <tbody data-body></tbody>
+            </table>
+        </div>
+
+        <script type="application/json" id="crawl-config">{{ config|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_HEX_TAG'))|raw }}</script>
+    </section>
+{% endblock %}
