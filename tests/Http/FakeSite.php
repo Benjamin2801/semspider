@@ -40,6 +40,14 @@ final class FakeSite
         </html>
         HTML;
 
+    // Comme Google Fonts : une police par alphabet (unicode-range), woff2 puis woff en secours.
+    public const STYLE = <<<'CSS'
+        @import "theme.css";
+        @font-face { font-family: A; src: url("/fonts/a.woff2") format("woff2"), url("/fonts/a.woff") format("woff"); unicode-range: U+0000-00FF, U+2019; }
+        @font-face { font-family: A; src: url("/fonts/cyrillique.woff2") format("woff2"); unicode-range: U+0400-045F; }
+        body { background: url(fond.png); }
+        CSS;
+
     /** @var list<string> */
     public array $requestedUrls = [];
 
@@ -63,15 +71,21 @@ final class FakeSite
                 XML, ['content-type: application/xml']),
             self::ROOT => self::ok(self::HOME, [...$html, 'content-encoding: gzip']),
             'https://www.site.test/a' => self::ok('<html><body><h1>A</h1><h1>Bis</h1><h3>Saut</h3></body></html>', $html),
+            // Page volontairement hors de l'index, sans title ni meta.
+            'https://www.site.test/merci' => self::ok('<html><head><meta name="robots" content="noindex, follow"></head><body><h1>Merci</h1></body></html>', $html),
+            // Texte en cyrillique : la police de cet alphabet est téléchargée, en plus de la latine (espaces, chiffres).
+            'https://www.site.test/ru' => self::ok('<html lang="ru"><head><link rel="stylesheet" href="/style.css"></head><body><p>Привет, мир 2026</p></body></html>', $html),
             'https://www.site.test/b' => new MockResponse('Introuvable', ['http_code' => 404, 'response_headers' => $html]),
             'https://www.site.test/old' => self::redirect('/a'),
             'https://www.site.test/doc.pdf' => self::ok('%PDF-1.4', ['content-type: application/pdf']),
-            'https://www.site.test/style.css' => self::ok('@import "theme.css"; @font-face { src: url("/fonts/a.woff2") format("woff2"); } body { background: url(fond.png); }', ['content-type: text/css']),
+            'https://www.site.test/style.css' => self::ok(self::STYLE, ['content-type: text/css']),
+            'https://www.site.test/fonts/a.woff' => self::ok(str_repeat('w', 25_000), ['content-type: font/woff']),
+            'https://www.site.test/fonts/cyrillique.woff2' => self::ok(str_repeat('c', 30_000), ['content-type: font/woff2']),
             'https://www.site.test/theme.css' => self::ok('h1 { color: red; }', ['content-type: text/css']),
             'https://www.site.test/fonts/a.woff2' => self::ok(str_repeat('f', 20_000), ['content-type: font/woff2']),
             'https://www.site.test/app.js' => self::ok(str_repeat('j', 30_000), ['content-type: application/javascript']),
             'https://www.site.test/big.jpg' => self::ok(str_repeat('i', 150_000), ['content-type: image/jpeg']),
-            'https://www.site.test/logo.png' => self::ok(str_repeat('l', 5_000), ['content-type: image/png']),
+            'https://www.site.test/logo.png' => self::ok(str_repeat('l', 5_000), ['content-type: image/png', 'cache-control: public, max-age=31536000']),
             'https://down.test/' => new MockResponse('', ['http_code' => 503]),
             default => new MockResponse('Introuvable', ['http_code' => 404]),
         };

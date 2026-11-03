@@ -55,7 +55,12 @@ final class CrawlController extends AbstractController
         $messages = $this->translations->getCatalogue($request->getLocale())->all('messages');
         $issues = [];
         foreach (Issue::cases() as $issue) {
-            $issues[$issue->value] = ['label' => $messages['issue.'.$issue->value] ?? $issue->value, 'severity' => $issue->severity()];
+            $issues[$issue->value] = [
+                'label' => $messages['issue.'.$issue->value] ?? $issue->value,
+                'severity' => $issue->severity(),
+                'why' => $messages['help.'.$issue->value.'.why'] ?? '',
+                'fix' => $messages['help.'.$issue->value.'.fix'] ?? '',
+            ];
         }
 
         return $this->render('crawl/results.html.twig', [
@@ -76,6 +81,8 @@ final class CrawlController extends AbstractController
                     'load' => PageAudit::SLOW_LOAD_MS,
                     'weight' => PageAudit::HEAVY_PAGE_BYTES,
                     'requests' => PageAudit::MANY_REQUESTS,
+                    'depth' => PageAudit::DEEP_CLICKS,
+                    'blockingStyles' => PageAudit::MANY_BLOCKING_STYLES,
                 ],
                 'i18n' => self::withPrefix($messages, 'js.'),
             ],

@@ -62,7 +62,8 @@ final class SiteDiscovery
     {
         for ($i = 0; $i <= self::MAX_REDIRECTS; ++$i) {
             try {
-                $response = $this->siteClient->request('GET', $url, ['headers' => ['Accept' => 'text/html']]);
+                // Les redirections sont suivies ici, une à une (voir PageCrawler pour max_redirects).
+                $response = $this->siteClient->request('GET', $url, ['headers' => ['Accept' => 'text/html'], 'max_redirects' => 0]);
                 $status = $response->getStatusCode();
                 $location = $response->getHeaders(false)['location'][0] ?? null;
                 $response->cancel();
@@ -103,7 +104,7 @@ final class SiteDiscovery
                 $found = null;
             }
             foreach ($found['pages'] ?? [] as $page) {
-                if ($scope->contains($page)) {
+                if ($scope->contains($page) && $robots->allows($page)) {
                     $pages[$page] = true;
                 }
             }

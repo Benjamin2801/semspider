@@ -37,6 +37,18 @@ final class PageCrawlerTest extends KernelTestCase
         return $service;
     }
 
+    /**
+     * @param list<string> $values
+     *
+     * @return list<string>
+     */
+    private static function sorted(array $values): array
+    {
+        sort($values);
+
+        return $values;
+    }
+
     /** @return array<string, PageReport> */
     private static function crawl(string ...$paths): array
     {
@@ -59,8 +71,9 @@ final class PageCrawlerTest extends KernelTestCase
         self::assertSame(200, $home->status);
         self::assertTrue($home->compressed);
         self::assertSame(\strlen(FakeSite::HOME), $home->bytes['html']);
-        // style.css + theme.css importé ; la police déclarée par style.css ; l'image de fond n'est pas comptée.
-        self::assertSame(\strlen('@import "theme.css"; @font-face { src: url("/fonts/a.woff2") format("woff2"); } body { background: url(fond.png); }') + \strlen('h1 { color: red; }'), $home->bytes['css']);
+        // style.css + theme.css importé ; l'image de fond n'est pas comptée.
+        self::assertSame(\strlen(FakeSite::STYLE) + \strlen('h1 { color: red; }'), $home->bytes['css']);
+        // Seule la police latine, en woff2 : ni sa version woff de secours, ni la cyrillique (aucun caractère de cet alphabet).
         self::assertSame(20_000, $home->bytes['font']);
         self::assertSame(30_000, $home->bytes['js']);
         // big.jpg, logo.png et la favicon introuvable (11 octets de page d'erreur).
@@ -80,6 +93,19 @@ final class PageCrawlerTest extends KernelTestCase
         self::assertNotContains(Issue::TitleMissing, $issues);
         self::assertNotContains(Issue::CanonicalElsewhere, $issues);
         self::assertNotContains(Issue::NoCompression, $issues);
+
+        // big.jpg : JPEG de 150 Ko ; logo.png, PNG de 5 Ko, est sous le seuil.
+        self::assertSame([['url' => 'https://www.site.test/big.jpg', 'bytes' => 150_000, 'mime' => 'image/jpeg']], $home->legacyImages);
+        self::assertContains(Issue::LegacyImages, $issues);
+        // Sans en-tête de cache, sauf logo.png (un an) ; la favicon en 404 n'est pas une ressource à mettre en cache.
+        self::assertSame(
+            ['https://www.site.test/app.js', 'https://www.site.test/big.jpg', 'https://www.site.test/fonts/a.woff2', 'https://www.site.test/style.css', 'https://www.site.test/theme.css'],
+            self::sorted(array_column($home->shortCache, 'url')),
+        );
+        self::assertContains(Issue::ShortCache, $issues);
+        // app.js est en defer ; la première image n'est pas en lazy loading.
+        self::assertNotContains(Issue::BlockingScripts, $issues);
+        self::assertNotContains(Issue::LazyFirstImage, $issues);
     }
 
     public function testReportsErrorsRedirectsFilesAndRobots(): void
@@ -96,6 +122,35 @@ final class PageCrawlerTest extends KernelTestCase
         self::assertSame('robots', $reports['https://www.site.test/private/x']->error);
         self::assertSame([Issue::Blocked], PageAudit::issues($reports['https://www.site.test/private/x']));
         self::assertNotContains('https://www.site.test/private/x', self::service(FakeSite::class)->requestedUrls);
+    }
+
+    public function testCountsOnlyTheFontsOfTheAlphabetsUsed(): void
+    {
+        $reports = self::crawl('ru');
+
+        self::assertSame(20_000 + 30_000, $reports['https://www.site.test/ru']->bytes['font'], 'Police latine et cyrillique, sans la version woff de secours.');
+    }
+
+    public function testDeliberateChoicesAreInformationNotIssues(): void
+    {
+        $issues = PageAudit::issues(self::crawl('merci')['https://www.site.test/merci']);
+
+        self::assertContains(Issue::Noindex, $issues);
+        self::assertSame('info', Issue::Noindex->severity());
+        self::assertNotContains(Issue::TitleMissing, $issues, 'Une page hors de l\'index n\'est pas jugée sur son title.');
+        self::assertNotContains(Issue::MetaMissing, $issues);
+        self::assertNotContains(Issue::ThinContent, $issues);
+        self::assertContains(Issue::ViewportMissing, $issues, 'Le reste (affichage, performance) compte toujours.');
+    }
+
+    public function testReadsRetryAfter(): void
+    {
+        self::assertSame(120, PageCrawler::retryAfter('120'));
+        self::assertNull(PageCrawler::retryAfter(null));
+        self::assertNull(PageCrawler::retryAfter('pas une date'));
+        $inAMinute = PageCrawler::retryAfter(gmdate('D, d M Y H:i:s', time() + 60).' GMT');
+        self::assertNotNull($inAMinute);
+        self::assertGreaterThanOrEqual(58, $inAMinute);
     }
 
     public function testSharedResourcesAreDownloadedOnce(): void

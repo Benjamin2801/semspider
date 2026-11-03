@@ -7,22 +7,130 @@
 {% endblock %}
 
 {% block body %}
+    {# Les seuils affichés sont ceux de l'outil : constantes de PageAudit. #}
+    {% set audit = 'App\\Crawl\\PageAudit::' %}
     <section class="hero">
-        <h1>{{ 'home.title'|trans|e|replace({'[': '<mark>', ']': '</mark>'})|raw }}</h1>
+        {% set title = 'home.title'|trans %}
+        <h1 aria-label="{{ title|replace({'[': '', ']': ''}) }}">{{ title|e|replace({'[': '<mark>', ']': '</mark>'})|raw }}</h1>
         <p class="lead">{{ 'home.lead'|trans({'%max%': max_pages}) }}</p>
         {{ include('crawl/_form.html.twig') }}
+        <ul class="hero-facts">
+            {% for fact in ['pages', 'robots', 'account', 'live'] %}
+                <li>{{ include('_partials/_icon.svg.twig', {name: 'check', size: 12}) }}{{ ('home.facts.' ~ fact)|trans({'%max%': max_pages}) }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="home-section" aria-labelledby="preview-title">
+        <p class="home-kicker">{{ 'home.preview.kicker'|trans }}</p>
+        <h2 id="preview-title">{{ 'home.preview.title'|trans }}</h2>
+        {{ include('home/_preview.html.twig') }}
+        <p class="compare-cta"><a href="#url" data-to-form>{{ 'home.preview.cta'|trans }}</a></p>
+    </section>
+
+    <section class="home-section" aria-labelledby="method-title">
+        <p class="home-kicker">{{ 'home.method.kicker'|trans }}</p>
+        <h2 id="method-title">{{ 'home.method.title'|trans }}</h2>
+        <ol class="method">
+            {% for step in ['type', 'crawl', 'measure', 'diagnose', 'export'] %}
+                <li class="method-card step-{{ step }}">
+                    <div class="method-shot" aria-hidden="true">{{ include('home/_shot.html.twig', {step: step}) }}</div>
+                    <p class="method-num">{{ '%02d'|format(loop.index) }}</p>
+                    <h3>{{ ('home.method.' ~ step ~ '.title')|trans }}</h3>
+                    <p>{{ ('home.method.' ~ step ~ '.text')|trans({'%max%': max_pages}) }}</p>
+                    <p class="method-output">{{ include('_partials/_icon.svg.twig', {name: 'check', size: 11}) }}{{ ('home.method.' ~ step ~ '.output')|trans({'%max%': max_pages}) }}</p>
+                </li>
+            {% endfor %}
+        </ol>
     </section>
 
     <section class="home-section" aria-labelledby="measures-title">
-        <h2 id="measures-title" class="home-kicker">{{ 'home.measures.title'|trans }}</h2>
+        <p class="home-kicker">{{ 'home.measures.kicker'|trans }}</p>
+        <h2 id="measures-title">{{ 'home.measures.title'|trans }}</h2>
         <div class="measures">
             {% for key, icon in {performance: 'clock', seo: 'tag', site: 'sitemap'} %}
-                <article class="measure-card">
+                <article class="measure-card is-{{ key }}">
                     <h3>{{ include('_partials/_icon.svg.twig', {name: icon, size: 16}) }} {{ ('home.measures.' ~ key ~ '.title')|trans }}</h3>
-                    <p>{{ ('home.measures.' ~ key ~ '.text')|trans }}</p>
+                    <ul>
+                        {% for item in 1..6 %}
+                            <li>{{ ('home.measures.' ~ key ~ '.' ~ item)|trans }}</li>
+                        {% endfor %}
+                    </ul>
                 </article>
             {% endfor %}
         </div>
-        <p class="home-note">{{ 'home.note'|trans }}</p>
     </section>
+
+    <section class="home-section" aria-labelledby="thresholds-title">
+        <p class="home-kicker">{{ 'home.thresholds.kicker'|trans }}</p>
+        <h2 id="thresholds-title">{{ 'home.thresholds.heading'|trans }}</h2>
+        <p class="home-lead">{{ 'home.thresholds.text'|trans }}</p>
+        {% set title_range = constant(audit ~ 'TITLE_LENGTH') %}
+        {% set meta = constant(audit ~ 'META_LENGTH') %}
+        {% set thresholds = {
+            ttfb: '≤ ' ~ constant(audit ~ 'SLOW_TTFB_MS') ~ ' ms',
+            load: '≤ ' ~ (constant(audit ~ 'SLOW_LOAD_MS') / 1000) ~ ' s',
+            weight: '≤ ' ~ (constant(audit ~ 'HEAVY_PAGE_BYTES') / 1000000)|number_format(1, app.request.locale == 'fr' ? ',' : '.', ' ') ~ ' ' ~ 'js.unit.mb'|trans,
+            image: '≤ ' ~ (constant(audit ~ 'HEAVY_IMAGE_BYTES') / 1000) ~ ' ' ~ 'js.unit.kb'|trans,
+            title: title_range[0] ~ '–' ~ title_range[1],
+            meta: meta[0] ~ '–' ~ meta[1],
+            words: '≥ ' ~ constant(audit ~ 'THIN_CONTENT_WORDS'),
+            depth: '≤ ' ~ constant(audit ~ 'DEEP_CLICKS'),
+        } %}
+        <div class="thresholds-wrap">
+            <table class="thresholds">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'home.thresholds.measure'|trans }}</th>
+                        <th scope="col">{{ 'home.thresholds.limit'|trans }}</th>
+                        <th scope="col">{{ 'home.thresholds.source'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, limit in thresholds %}
+                        <tr>
+                            <th scope="row">{{ ('home.thresholds.' ~ key ~ '.name')|trans }}</th>
+                            <td class="metric is-good">{{ limit }}</td>
+                            <td>{{ ('home.thresholds.' ~ key ~ '.source')|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="inside-title">
+        <p class="home-kicker">{{ 'home.inside.kicker'|trans }}</p>
+        <h2 id="inside-title">{{ 'home.inside.title'|trans }}</h2>
+        <div class="inside">
+            {% for key, icon in {browser: 'layers', network: 'clock', polite: 'shield', honest: 'eye'} %}
+                <article>
+                    <span class="inside-icon">{{ include('_partials/_icon.svg.twig', {name: icon, size: 16}) }}</span>
+                    <h3>{{ ('home.inside.' ~ key ~ '.title')|trans }}</h3>
+                    <p>{{ ('home.inside.' ~ key ~ '.text')|trans }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="home-cta">
+        <h2>{{ 'home.cta.title'|trans }}</h2>
+        <p>{{ 'home.cta.text'|trans({'%max%': max_pages}) }}</p>
+        <a class="cta-button" href="#url" data-to-form>{{ 'home.cta.button'|trans }}</a>
+    </section>
+
+    {{ include('home/_discord.html.twig') }}
+
+    <div class="home-sources is-tech">
+        <p class="home-kicker">{{ 'home.tech'|trans }}</p>
+        <ul class="sources-list">
+            {% for name, tech in {OVHcloud: ['ovh', null], PHP: ['php', '#777BB4'], Symfony: ['symfony', null], 'HttpClient': [null, '#047857'], Twig: [null, '#8DAA2B'], PHPUnit: [null, '#3C9CD7'], PHPStan: [null, null]} %}
+                <li{% if tech[1] %} style="--brand: {{ tech[1] }}"{% endif %}>
+                    {%- if tech[0] %}{{ source('home/logos/' ~ tech[0] ~ '.svg')|replace({'<svg role="img" ': '<svg class="source-logo" aria-hidden="true" focusable="false" '})|raw }}
+                    {%- else %}<span class="source-mark" aria-hidden="true">{{ name|first }}</span>{% endif -%}
+                    {{ name }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}

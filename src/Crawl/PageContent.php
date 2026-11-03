@@ -9,11 +9,13 @@ final class PageContent
      * @param list<string>                          $h1
      * @param list<string>                          $h2
      * @param list<string>                          $h3
-     * @param list<array{level: int, text: string}> $outline        titres H1 à H6 dans l'ordre de la page
-     * @param list<string>                          $links          liens internes, adresses absolues, sans doublon
+     * @param list<array{level: int, text: string}> $outline         titres H1 à H6 dans l'ordre de la page
+     * @param list<string>                          $links           liens internes, adresses absolues, sans doublon
      * @param list<PageImage>                       $images
-     * @param array<string, ResourceType>           $resources      adresse → type attendu
-     * @param list<string>                          $structuredData types schema.org des blocs JSON-LD
+     * @param array<string, ResourceType>           $resources       adresse → type attendu
+     * @param list<string>                          $structuredData  types schema.org des blocs JSON-LD
+     * @param list<string>                          $blockingScripts scripts du <head> sans defer ni async
+     * @param list<int>                             $codePoints
      */
     public function __construct(
         public readonly ?string $title,
@@ -36,6 +38,11 @@ final class PageContent
         public readonly int $hreflang,
         public readonly bool $openGraph,
         public readonly array $structuredData,
+        public readonly array $blockingScripts = [],
+        // Feuilles de style du <head> chargées pour tous les écrans (media="print" exclu).
+        public readonly int $blockingStyles = 0,
+        // Caractères du texte visible (points de code distincts) : les polices à unicode-range en dépendent.
+        public readonly array $codePoints = [],
     ) {
     }
 

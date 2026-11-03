@@ -12,11 +12,16 @@ no database, no front-end build.
 
 - **Performance**: transferred weight (compressed when the server compresses), TTFB, estimated load time, number of
   requests, and the share of images, HTML, CSS, JavaScript, fonts and other files. Stylesheets are read to count the
-  fonts and imported stylesheets they declare.
+  fonts and imported stylesheets they declare; like a browser, only the font files whose `unicode-range` covers
+  characters of the page are counted.
 - **SEO tags**: title, meta description, H1, H2 and H3 with their values and length, canonical, meta robots and
   `X-Robots-Tag`, `lang`, hreflang, Open Graph, JSON-LD types, word count.
 - **Page issues**: missing or badly sized tags, several H1, skipped heading levels, thin content, images without `alt`,
-  without dimensions or over 100 KB, heavy pages, slow TTFB, uncompressed HTML, broken resources, mixed content.
+  without dimensions or over 100 KB, JPEG or PNG worth converting to WebP or AVIF, render-blocking scripts and
+  stylesheets, short browser cache, a lazy-loaded first image, heavy pages, slow TTFB, uncompressed HTML, broken
+  resources, mixed content.
+- **Priorities**: a site health score and a "fix first" list (severity × pages affected), and for every issue why it
+  matters and how to fix it.
 - **Site issues**, once every page is known: duplicate titles, descriptions and content, links to errors or redirects,
   click depth, inbound links, orphan sitemap pages, pages missing from the sitemap.
 

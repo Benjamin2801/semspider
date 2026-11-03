@@ -26,7 +26,8 @@ final class CrawlControllerTest extends WebTestCase
 
         $this->client->request('GET', '/fr');
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.lead', '500 pages');
+        self::assertSelectorTextContains('.hero-facts', '500 pages');
+        self::assertSelectorTextContains('.thresholds', '≤ 800 ms');
         self::assertSelectorExists('form.crawl-form input[name="url"]');
         self::assertSelectorNotExists('.form-error');
     }
@@ -39,12 +40,18 @@ final class CrawlControllerTest extends WebTestCase
         self::assertSelectorTextContains('h1', 'Crawl de www.site.test');
         self::assertSelectorTextContains('.crawl-meta', '3 pages dans le sitemap');
         self::assertSelectorExists('meta[name="robots"][content="noindex"]');
+        self::assertInputValueSame('url', 'www.site.test', 'Le formulaire reste en haut des résultats, avec une adresse lisible.');
 
         $config = json_decode($crawler->filter('#crawl-config')->text(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(FakeSite::ROOT, $config['root']);
         self::assertSame('/fr/crawl/pages', $config['endpoint']);
         self::assertSame(500, $config['maxPages']);
-        self::assertSame(['label' => 'H1 absent', 'severity' => 'error'], $config['issues']['h1_missing']);
+        self::assertSame('H1 absent', $config['issues']['h1_missing']['label']);
+        self::assertSame('error', $config['issues']['h1_missing']['severity']);
+        foreach ($config['issues'] as $code => $issue) {
+            self::assertNotSame('', $issue['why'], $code.' : explication manquante.');
+            self::assertNotSame('', $issue['fix'], $code.' : correction manquante.');
+        }
         self::assertSame('Poids', $config['i18n']['col.weight']);
     }
 
@@ -81,6 +88,7 @@ final class CrawlControllerTest extends WebTestCase
         self::assertContains('image_heavy', $home['issues']);
         self::assertContains('https://www.site.test/a', $home['links']);
         self::assertSame(['https://www.site.test/big.jpg'], $home['imagesWithoutAlt']);
+        self::assertSame(['https://www.site.test/private/x'], $home['blockedLinks'], 'Le lien interdit par robots.txt est signalé au navigateur, qui ne le demandera pas.');
 
         self::assertSame(404, $missing['status']);
         self::assertSame(['http_error'], $missing['issues']);

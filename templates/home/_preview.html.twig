@@ -1,0 +1,63 @@
+{# Aperçu statique des résultats, avec les classes du vrai tableau : l'accueil montre l'outil tel qu'il est. #}
+{% macro bytes(n) %}
+    {%- set point = app.request.locale == 'fr' ? ',' : '.' -%}
+    {{- n >= 1000000 ? (n / 1000000)|number_format(1, point, ' ') ~ ' ' ~ 'js.unit.mb'|trans : (n / 1000)|number_format(0, point, ' ') ~ ' ' ~ 'js.unit.kb'|trans -}}
+{% endmacro %}
+{% macro duration(ms) %}
+    {%- set point = app.request.locale == 'fr' ? ',' : '.' -%}
+    {{- ms >= 1000 ? (ms / 1000)|number_format(1, point, ' ') ~ ' ' ~ 'js.unit.s'|trans : ms ~ ' ' ~ 'js.unit.ms'|trans -}}
+{% endmacro %}
+
+{% set rows = [
+    {path: '/', title: 'home.preview.rows.home', status: 200, weight: 640000, stack: [42, 6, 9, 21, 22], ttfb: 180, load: 1200, t: [52, 'is-good'], m: [148, 'is-good'], hn: [1, 6, 4], issues: {notice: 1}},
+    {path: '/blog/guide-seo-technique', title: 'home.preview.rows.guide', status: 200, weight: 2900000, stack: [78, 3, 4, 10, 5], ttfb: 210, load: 3800, t: [33, 'is-good'], m: ['—', 'is-bad'], hn: [1, 12, 18], issues: {warning: 3}},
+    {path: '/services', title: 'home.preview.rows.services', status: 200, weight: 512000, stack: [35, 8, 12, 25, 20], ttfb: 1100, load: 2400, t: [71, 'is-warn'], m: [132, 'is-good'], hn: [2, 5, 0], issues: {warning: 3, notice: 1}},
+    {path: '/ancienne-offre', title: 'home.preview.rows.old', status: 404, issues: {error: 1}},
+] %}
+{% set audit = 'App\\Crawl\\PageAudit::' %}
+
+<div class="preview" aria-hidden="true">
+    <div class="preview-bar"><span></span><span></span><span></span><b>{{ 'crawl.title'|trans({'%host%': 'www.example.com'}) }}</b></div>
+    <div class="preview-body">
+        <dl class="stats">
+            {% for key, value in {pages: '128', weight: _self.bytes(720000), ttfb: _self.duration(240), load: _self.duration(2100), errors: '4'} %}
+                <div class="stat{{ key == 'errors' ? ' is-error' }}"><dt>{{ ('js.synth.' ~ key)|trans }}</dt><dd>{{ value }}</dd></div>
+            {% endfor %}
+        </dl>
+        <div class="table-wrap">
+            <table class="pages-table is-preview">
+                <thead>
+                    <tr>
+                        {% for key in ['url', 'status', 'weight', 'ttfb', 'load', 'title', 'meta', 'hn', 'issues'] %}
+                            <th data-key="{{ key }}"{% if key not in ['url', 'status', 'issues'] %} class="is-number"{% endif %}><button type="button" tabindex="-1">{{ ('js.col.' ~ key)|trans }}</button></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr data-url>
+                            <td data-key="url">
+                                <span class="page-toggle"><span class="chevron"></span><span class="page-text"><span class="page-path">{{ row.path }}</span><span class="page-sub">{{ row.title|trans }}</span></span></span>
+                            </td>
+                            <td data-key="status"><span class="status {{ row.status == 200 ? 'is-ok' : 'is-error' }}">{{ row.status }}</span></td>
+                            {% if row.weight is defined %}
+                                <td data-key="weight" class="is-number">
+                                    <span class="weight"><span class="metric{{ row.weight > constant(audit ~ 'HEAVY_PAGE_BYTES') ? ' is-warn' }}">{{ _self.bytes(row.weight) }}</span>
+                                        <span class="stack is-mini">{% for type in ['image', 'html', 'css', 'js', 'font'] %}<span class="is-{{ type }}" style="width:{{ row.stack[loop.index0] }}%"></span>{% endfor %}</span></span>
+                                </td>
+                                <td data-key="ttfb" class="is-number"><span class="metric{{ row.ttfb > constant(audit ~ 'SLOW_TTFB_MS') ? ' is-warn' }}">{{ _self.duration(row.ttfb) }}</span></td>
+                                <td data-key="load" class="is-number"><span class="metric{{ row.load > constant(audit ~ 'SLOW_LOAD_MS') ? ' is-warn' }}">{{ _self.duration(row.load) }}</span></td>
+                                <td data-key="title" class="is-number"><span class="metric {{ row.t[1] }}">{{ row.t[0] }}</span></td>
+                                <td data-key="meta" class="is-number"><span class="metric {{ row.m[1] }}">{{ row.m[0] }}</span></td>
+                                <td data-key="hn" class="is-number"><span class="hn"><span class="metric {{ row.hn[0] == 1 ? 'is-good' : 'is-warn' }}">{{ row.hn[0] }}</span><span class="metric">{{ row.hn[1] }}</span><span class="metric">{{ row.hn[2] }}</span></span></td>
+                            {% else %}
+                                <td data-key="weight"></td><td data-key="ttfb"></td><td data-key="load"></td><td data-key="title"></td><td data-key="meta"></td><td data-key="hn"></td>
+                            {% endif %}
+                            <td data-key="issues"><span class="issue-counts">{% for severity, n in row.issues %}<span class="pill is-{{ severity }}">{{ n }}</span>{% endfor %}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

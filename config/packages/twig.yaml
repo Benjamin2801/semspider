@@ -1,6 +1,10 @@
 twig:
     file_name_pattern: '*.twig'
     globals:
+        # Site Net Labs, vers lequel mène « Net Labs » dans l'en-tête.
+        netlabs_url: 'https://net-labs.fr/'
+        # Invitation permanente au serveur Discord de Net Labs (salon d'arrivée #bienvenue).
+        discord_url: 'https://discord.gg/cdD8C6hjWu'
         max_pages: '%app.crawl.max_pages%'
 
 when@test:

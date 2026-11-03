@@ -6,9 +6,12 @@ namespace App\Crawl;
 final class PageReport implements \JsonSerializable
 {
     /**
-     * @param array<string, int>                    $bytes           octets par type (ResourceType), HTML compris
-     * @param list<array{url: string, bytes: int}>  $heavyImages
-     * @param list<array{url: string, status: int}> $brokenResources
+     * @param array<string, int>                                 $bytes           octets par type (ResourceType), HTML compris
+     * @param list<array{url: string, bytes: int}>               $heavyImages
+     * @param list<array{url: string, status: int}>              $brokenResources
+     * @param list<array{url: string, bytes: int, mime: string}> $legacyImages    JPEG, PNG ou GIF à convertir en WebP ou AVIF
+     * @param list<array{url: string, ttl: int}>                 $shortCache      ressources gardées moins longtemps par le navigateur
+     * @param list<string>                                       $blockedLinks    liens internes interdits par robots.txt
      */
     public function __construct(
         public readonly string $url,
@@ -23,10 +26,15 @@ final class PageReport implements \JsonSerializable
         public readonly int $requests = 0,
         public readonly bool $compressed = false,
         public readonly ?string $xRobotsTag = null,
+        // Secondes à attendre avant de redemander la page (en-tête Retry-After d'une réponse 503 ou 429).
+        public readonly ?int $retryAfter = null,
         public readonly ?PageContent $content = null,
         public readonly array $heavyImages = [],
         public readonly array $brokenResources = [],
+        public readonly array $legacyImages = [],
+        public readonly array $shortCache = [],
         public readonly bool $incomplete = false,
+        public readonly array $blockedLinks = [],
     ) {
     }
 
@@ -51,6 +59,7 @@ final class PageReport implements \JsonSerializable
             'error' => $this->error,
             'contentType' => $this->contentType,
             'redirect' => $this->redirect,
+            'retryAfter' => $this->retryAfter,
             'ttfb' => $this->ttfb,
             'htmlMs' => $this->htmlMs,
             'loadMs' => $this->loadMs,
@@ -71,6 +80,7 @@ final class PageReport implements \JsonSerializable
             'words' => $content?->words,
             'textHash' => $content?->textHash,
             'links' => $content->links ?? [],
+            'blockedLinks' => $this->blockedLinks,
             'externalLinks' => $content?->externalLinks,
             'images' => \count($content->images ?? []),
             'imagesWithoutAlt' => array_values(array_map(
@@ -79,6 +89,11 @@ final class PageReport implements \JsonSerializable
             )),
             'heavyImages' => $this->heavyImages,
             'brokenResources' => $this->brokenResources,
+            'legacyImages' => $this->legacyImages,
+            'shortCache' => $this->shortCache,
+            'blockingScripts' => $content->blockingScripts ?? [],
+            'blockingStyles' => $content?->blockingStyles,
+            'firstImageLazy' => $content?->images[0]->lazy ?? false,
             'hreflang' => $content?->hreflang,
             'openGraph' => $content?->openGraph,
             'structuredData' => $content->structuredData ?? [],

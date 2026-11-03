@@ -1,0 +1,15 @@
+{% if step == 'type' %}
+    <span class="shot-input">www.example.com<span class="shot-caret"></span></span>
+{% elseif step == 'crawl' %}
+    <span class="shot-progress"><span style="width: 62%"></span></span>
+    <span class="shot-mono">128 / 206</span>
+{% elseif step == 'measure' %}
+    <span class="stack shot-stack"><span class="is-image" style="width:44%"></span><span class="is-html" style="width:6%"></span><span class="is-css" style="width:10%"></span><span class="is-js" style="width:22%"></span><span class="is-font" style="width:18%"></span></span>
+    <span class="shot-mono"><span class="metric is-good">TTFB 240 ms</span> · <span class="metric is-warn">{{ 'js.col.requests'|trans }} 94</span></span>
+{% elseif step == 'diagnose' %}
+    <span class="issue-counts"><span class="pill is-error">2</span><span class="pill is-warning">5</span><span class="pill is-notice">3</span></span>
+    <span class="shot-mono"><span class="dot is-error"></span> {{ 'issue.h1_missing'|trans }}</span>
+{% else %}
+    <span class="button-secondary is-small is-csv">{{ include('_partials/_icon.svg.twig', {name: 'download'}) }}{{ 'crawl.export_csv'|trans }}</span>
+    <span class="shot-mono">{{ 'home.method.export.columns'|trans }}</span>
+{% endif %}

@@ -9,6 +9,10 @@ final class HtmlAnalyzer
 {
     private const IGNORED_TEXT = 'ancestor::script or ancestor::style or ancestor::noscript or ancestor::template or ancestor::svg';
 
+    // Le navigateur attend ces fichiers avant d'afficher quoi que ce soit.
+    private const HEAD_STYLESHEETS = '//head/link[contains(concat(" ", translate(@rel, "STYLESHEET", "stylesheet"), " "), " stylesheet ")][not(@media="print")]';
+    private const HEAD_SCRIPTS = '//head/script[@src][not(@defer)][not(@async)][not(@type="module")]';
+
     public function analyze(string $html, string $url, SiteScope $scope, ?string $contentType = null): PageContent
     {
         $xpath = new \DOMXPath(self::load($html, $contentType));
@@ -47,6 +51,9 @@ final class HtmlAnalyzer
             hreflang: ($xpath->query('//link[@hreflang]') ?: new \DOMNodeList())->count(),
             openGraph: ($xpath->query('//meta[starts-with(@property, "og:")]') ?: new \DOMNodeList())->count() > 0,
             structuredData: self::structuredData($xpath),
+            blockingScripts: self::blockingScripts($xpath, $base),
+            blockingStyles: ($xpath->query(self::HEAD_STYLESHEETS) ?: new \DOMNodeList())->count(),
+            codePoints: self::codePoints($text),
         );
     }
 
@@ -177,6 +184,30 @@ final class HtmlAnalyzer
         }
 
         return $outline;
+    }
+
+    /** @return list<int> */
+    private static function codePoints(string $text): array
+    {
+        $codePoints = array_values(array_unique(array_map('mb_ord', mb_str_split($text))));
+        sort($codePoints);
+
+        return array_values(array_filter($codePoints, 'is_int'));
+    }
+
+    /** @return list<string> */
+    private static function blockingScripts(\DOMXPath $xpath, string $base): array
+    {
+        $scripts = [];
+        foreach ($xpath->query(self::HEAD_SCRIPTS) ?: [] as $script) {
+            \assert($script instanceof \DOMElement);
+            $url = Url::resolve($base, $script->getAttribute('src'));
+            if (null !== $url) {
+                $scripts[] = $url;
+            }
+        }
+
+        return $scripts;
     }
 
     /** @return list<string> */

@@ -39,6 +39,9 @@ final class PageCrawler
             try {
                 $responses[] = $this->siteClient->request('GET', $url, [
                     'headers' => ['Accept' => 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8'],
+                    // Chaque redirection est une ligne du tableau. À préciser ici : en production,
+                    // NoPrivateNetworkHttpClient suit les redirections et ne voit pas les options par défaut du client.
+                    'max_redirects' => 0,
                     'user_data' => $url,
                 ]);
             } catch (TransportExceptionInterface) {
@@ -63,7 +66,7 @@ final class PageCrawler
         $measures = $this->meter->measure($wanted, $deadline);
 
         foreach ($pages as $url => [$response, $content, $resources, $received]) {
-            $reports[$url] = $this->report($url, $response, null, $content, $resources, $measures, $received);
+            $reports[$url] = $this->report($url, $response, null, $content, $resources, $measures, $received, $scope, $robots);
         }
 
         return array_values(array_filter(array_map(static fn (string $url): ?PageReport => $reports[$url] ?? null, $urls)));
@@ -101,6 +104,20 @@ final class PageCrawler
         return $results;
     }
 
+    // Retry-After : un nombre de secondes, ou une date HTTP.
+    public static function retryAfter(?string $value): ?int
+    {
+        if (null === $value || '' === trim($value)) {
+            return null;
+        }
+        if (ctype_digit(trim($value))) {
+            return (int) trim($value);
+        }
+        $date = strtotime($value);
+
+        return false === $date ? null : max(0, $date - time());
+    }
+
     private static function isHtml(ResponseInterface $response): bool
     {
         $status = $response->getStatusCode();
@@ -113,7 +130,7 @@ final class PageCrawler
      * @param array<string, ResourceType>    $resources
      * @param array<string, ResourceMeasure> $measures
      */
-    private function report(string $url, ResponseInterface $response, ?string $error, ?PageContent $content = null, array $resources = [], array $measures = [], int $received = 0): PageReport
+    private function report(string $url, ResponseInterface $response, ?string $error, ?PageContent $content = null, array $resources = [], array $measures = [], int $received = 0, ?SiteScope $scope = null, ?RobotsTxt $robots = null): PageReport
     {
         try {
             $status = $response->getStatusCode();
@@ -137,7 +154,12 @@ final class PageCrawler
                 continue;
             }
             // Polices et feuilles importées ne partent qu'une fois leur feuille de style reçue.
+            // Google Fonts déclare une police par alphabet : seules celles qu'utilise le texte de la page comptent.
+            $usedFonts = $measure->usedFonts($content->codePoints ?? []);
             foreach ($measure->children as $childUrl => $childType) {
+                if (ResourceType::Font === $childType && !isset($usedFonts[$childUrl])) {
+                    continue;
+                }
                 $expected[$childUrl] ??= $childType;
                 $child = $measures[$childUrl] ?? null;
                 if (null !== $child && !isset($resources[$childUrl])) {
@@ -146,11 +168,22 @@ final class PageCrawler
             }
             $slowest = max($slowest, $measure->ms);
         }
+        $legacyImages = [];
+        $shortCache = [];
         foreach (array_intersect_key($measures, $expected) as $measure) {
             $bytes[$measure->type->value] += $measure->bytes;
             ++$requests;
             if ($measure->isBroken()) {
                 $broken[] = ['url' => $measure->url, 'status' => $measure->status];
+                continue;
+            }
+            if (ResourceType::Image === $measure->type && \in_array($measure->mime, PageAudit::LEGACY_IMAGE_TYPES, true)
+                && $measure->bytes > PageAudit::LEGACY_IMAGE_BYTES) {
+                $legacyImages[] = ['url' => $measure->url, 'bytes' => $measure->bytes, 'mime' => (string) $measure->mime];
+            }
+            // Seuls les fichiers du site : le cache de Google Fonts ou d'un CDN tiers ne se règle pas ici.
+            if (ResourceType::Other !== $measure->type && $measure->cacheTtl < PageAudit::SHORT_CACHE_SECONDS && (bool) $scope?->contains($measure->url)) {
+                $shortCache[] = ['url' => $measure->url, 'ttl' => $measure->cacheTtl];
             }
         }
 
@@ -176,9 +209,14 @@ final class PageCrawler
             requests: $requests,
             compressed: isset($headers['content-encoding']),
             xRobotsTag: $headers['x-robots-tag'][0] ?? null,
+            retryAfter: self::retryAfter($headers['retry-after'][0] ?? null),
+            // Les liens interdits par robots.txt ne sont pas demandés : le navigateur les affiche sans les compter dans la limite.
+            blockedLinks: null === $robots ? [] : array_values(array_filter($content->links ?? [], static fn (string $link): bool => !$robots->allows($link))),
             content: $content,
             heavyImages: array_values($heavyImages),
             brokenResources: $broken,
+            legacyImages: $legacyImages,
+            shortCache: $shortCache,
             incomplete: \count(array_intersect_key($measures, $expected)) < \count($expected),
         );
     }

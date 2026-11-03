@@ -19,6 +19,15 @@ final class PageAudit
     public const HEAVY_PAGE_BYTES = 2_500_000;
     public const HEAVY_IMAGE_BYTES = 100_000;
     public const MANY_REQUESTS = 80;
+    // Au-delà de 3 clics depuis l'accueil, une page est moins explorée et reçoit moins de liens.
+    public const DEEP_CLICKS = 3;
+    // Au-delà, un JPEG, PNG ou GIF gagne nettement à passer en WebP ou AVIF (souvent 25 à 50 % plus léger).
+    public const LEGACY_IMAGE_BYTES = 50_000;
+    public const LEGACY_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp'];
+    // Une ressource statique gardée moins d'une semaine est souvent retéléchargée d'une visite à l'autre.
+    public const SHORT_CACHE_SECONDS = 7 * 86_400;
+    // Chaque feuille de style du <head> retarde l'affichage ; au-delà de 3, mieux vaut les regrouper.
+    public const MANY_BLOCKING_STYLES = 3;
     // En dessous, la compression ne fait rien gagner.
     private const COMPRESSIBLE_BYTES = 1_000;
 
@@ -40,23 +49,28 @@ final class PageAudit
         }
 
         $robots = strtolower($content->metaRobots.' '.$page->xRobotsTag);
+        $noindex = str_contains($robots, 'noindex') || str_contains($robots, 'none');
+        $canonicalElsewhere = null !== $content->canonical && $content->canonical !== $page->url;
+        // Une page volontairement hors de l'index (noindex, canonical vers une autre) n'est pas jugée sur
+        // ses balises et son contenu : elle ne sera pas affichée dans les résultats. Sa performance compte toujours.
+        $indexable = !$noindex && !$canonicalElsewhere;
         $title = u($content->title ?? '')->length();
         $meta = u($content->metaDescription ?? '')->length();
         $images = $content->images;
 
         $found = array_filter([
-            Issue::Noindex->value => str_contains($robots, 'noindex') || str_contains($robots, 'none'),
-            Issue::CanonicalElsewhere->value => null !== $content->canonical && $content->canonical !== $page->url,
-            Issue::TitleMissing->value => 0 === $title,
-            Issue::TitleShort->value => $title > 0 && $title < self::TITLE_LENGTH[0],
-            Issue::TitleLong->value => $title > self::TITLE_LENGTH[1],
-            Issue::MetaMissing->value => 0 === $meta,
-            Issue::MetaShort->value => $meta > 0 && $meta < self::META_LENGTH[0],
-            Issue::MetaLong->value => $meta > self::META_LENGTH[1],
-            Issue::H1Missing->value => [] === array_filter($content->h1),
-            Issue::H1Multiple->value => \count($content->h1) > 1,
-            Issue::HeadingSkip->value => $content->headingSkip(),
-            Issue::ThinContent->value => $content->words < self::THIN_CONTENT_WORDS,
+            Issue::Noindex->value => $noindex,
+            Issue::CanonicalElsewhere->value => $canonicalElsewhere,
+            Issue::TitleMissing->value => $indexable && 0 === $title,
+            Issue::TitleShort->value => $indexable && $title > 0 && $title < self::TITLE_LENGTH[0],
+            Issue::TitleLong->value => $indexable && $title > self::TITLE_LENGTH[1],
+            Issue::MetaMissing->value => $indexable && 0 === $meta,
+            Issue::MetaShort->value => $indexable && $meta > 0 && $meta < self::META_LENGTH[0],
+            Issue::MetaLong->value => $indexable && $meta > self::META_LENGTH[1],
+            Issue::H1Missing->value => $indexable && [] === array_filter($content->h1),
+            Issue::H1Multiple->value => $indexable && \count($content->h1) > 1,
+            Issue::HeadingSkip->value => $indexable && $content->headingSkip(),
+            Issue::ThinContent->value => $indexable && $content->words < self::THIN_CONTENT_WORDS,
             Issue::LangMissing->value => '' === (string) $content->lang,
             Issue::ViewportMissing->value => !$content->viewport,
             Issue::ImageAltMissing->value => [] !== array_filter($images, static fn (PageImage $i): bool => null === $i->alt),
@@ -69,6 +83,11 @@ final class PageAudit
             Issue::NoCompression->value => !$page->compressed && ($page->bytes[ResourceType::Html->value] ?? 0) > self::COMPRESSIBLE_BYTES,
             Issue::BrokenResources->value => [] !== $page->brokenResources,
             Issue::MixedContent->value => $content->mixedContent > 0,
+            Issue::BlockingScripts->value => [] !== $content->blockingScripts,
+            Issue::BlockingStyles->value => $content->blockingStyles > self::MANY_BLOCKING_STYLES,
+            Issue::LegacyImages->value => [] !== $page->legacyImages,
+            Issue::ShortCache->value => [] !== $page->shortCache,
+            Issue::LazyFirstImage->value => $images[0]->lazy ?? false,
             Issue::Incomplete->value => $page->incomplete,
         ]);
 

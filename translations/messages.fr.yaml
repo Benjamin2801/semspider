@@ -3,25 +3,135 @@ meta:
     description: "Crawlez votre site : poids, TTFB, chargement, part des images, du CSS et du JS, title, meta description, H1, H2 et H3 de chaque page."
 
 nav:
+    home: "accueil"
     language: "Langue"
     theme: "Basculer entre thème clair et sombre"
 
 home:
     # Le mot entre crochets est surligné.
     title: "Chaque page de votre site, [passée au crible]."
-    lead: "Poids, temps de réponse, ressources et balises SEO : jusqu'à %max% pages analysées, sans installation ni compte."
+    lead: "Poids, vitesse, balises SEO et maillage interne : un audit technique de votre site, page par page, en quelques minutes."
+    facts:
+        pages: "Jusqu'à %max% pages"
+        robots: "robots.txt respecté"
+        account: "Sans compte ni installation"
+        live: "Résultats en direct"
+    preview:
+        kicker: "L'aperçu"
+        title: "Tout le site sur un écran : la synthèse, puis une ligne par page"
+        cta: "Crawler mon site maintenant →"
+        rows:
+            home: "Agence web à Lyon : sites rapides et bien référencés"
+            guide: "Guide SEO technique : les bases"
+            services: "Nos services de création de sites web, refonte, référencement et maintenance"
+            old: "Page introuvable"
+    method:
+        kicker: "La méthode"
+        title: "De l'adresse au plan d'action, en cinq étapes"
+        type:
+            title: "Saisissez"
+            text: "L'adresse de votre site, avec ou sans www."
+            output: "Une adresse"
+        crawl:
+            title: "Explorez"
+            text: "Les liens internes depuis l'accueil, puis les pages du sitemap jamais liées."
+            output: "Jusqu'à %max% pages"
+        measure:
+            title: "Mesurez"
+            text: "Le poids de chaque type de fichier, le TTFB, le chargement et les requêtes."
+            output: "Performance"
+        diagnose:
+            title: "Diagnostiquez"
+            text: "Plus de 30 contrôles par page et sur tout le site, classés par gravité."
+            output: "Problèmes classés"
+        export:
+            title: "Exportez"
+            text: "Triez, filtrez, ouvrez chaque page, puis exportez toutes les valeurs."
+            output: "CSV"
+            columns: "26 colonnes"
     measures:
-        title: "Ce qui est mesuré"
+        kicker: "Les mesures"
+        title: "Ce que SemSpider mesure sur chaque page"
         performance:
             title: "Performance"
-            text: "Poids transféré, TTFB, chargement estimé, nombre de requêtes, part des images, du HTML, du CSS, du JS et du reste."
+            1: "Poids transféré et part des images, du HTML, du CSS, du JS et des polices"
+            2: "TTFB : temps jusqu'au premier octet"
+            3: "Chargement estimé, polices comprises"
+            4: "Nombre de requêtes"
+            5: "Compression du HTML (gzip, brotli)"
+            6: "Images trop lourdes et ressources en erreur"
         seo:
             title: "Balises SEO"
-            text: "Title, meta description, H1, H2 et H3 de chaque page avec leur longueur ; canonical, noindex, langue, données structurées."
+            1: "Title et meta description, avec leur longueur"
+            2: "Plan des titres, de H1 à H6"
+            3: "Canonical, noindex et X-Robots-Tag"
+            4: "Langue, hreflang et Open Graph"
+            5: "Données structurées JSON-LD"
+            6: "Images sans alt ni dimensions"
         site:
             title: "Structure du site"
-            text: "Profondeur de clic, liens entrants, liens cassés, titres et contenus en double, pages orphelines du sitemap."
-    note: "SemSpider respecte robots.txt et n'exécute pas le JavaScript des pages : le chargement affiché est une estimation, à partir du HTML puis des ressources téléchargées en parallèle."
+            1: "Profondeur de clic depuis l'accueil"
+            2: "Liens internes entrants"
+            3: "Liens cassés et liens vers des redirections"
+            4: "Titles, descriptions et contenus en double"
+            5: "Pages orphelines du sitemap"
+            6: "Pages absentes du sitemap"
+    thresholds:
+        kicker: "Les repères"
+        heading: "Des seuils publics, pas des impressions"
+        text: "Chaque couleur du tableau vient d'un seuil fixe et connu. Le même seuil sert partout : tableau, détail et liste des problèmes."
+        measure: "Mesure"
+        limit: "Seuil"
+        source: "Repère"
+        ttfb:
+            name: "Temps jusqu'au premier octet (TTFB)"
+            source: "web.dev (Google) : « bon » jusqu'à 800 ms"
+        load:
+            name: "Chargement estimé"
+            source: "Au-delà de 3 s, le taux d'abandon sur mobile grimpe (étude Google)"
+        weight:
+            name: "Poids de la page"
+            source: "Lighthouse pénalise le poids total vers 2,6 Mo"
+        image:
+            name: "Poids d'une image"
+            source: "Repère d'optimisation courant pour une image web"
+        title:
+            name: "Longueur du title (caractères)"
+            source: "Google affiche environ 600 px, soit 55 à 60 caractères"
+        meta:
+            name: "Longueur de la meta description (caractères)"
+            source: "Extrait de Google coupé vers 155 à 160 caractères"
+        words:
+            name: "Mots du texte visible"
+            source: "En dessous, la page risque d'être jugée mince"
+        depth:
+            name: "Clics depuis l'accueil"
+            source: "Au-delà, la page est moins explorée et reçoit moins de liens"
+    inside:
+        kicker: "Sous le capot"
+        title: "Un crawler léger, honnête sur ce qu'il mesure"
+        browser:
+            title: "Votre navigateur pilote"
+            text: "Il garde la file des pages et demande des lots de quelques pages au serveur. Aucun crawl n'est stocké : les résultats restent chez vous."
+        network:
+            title: "Des mesures réelles"
+            text: "Le HTML et toutes les ressources sont téléchargés comme par un navigateur, en parallèle et compressés. Un fichier partagé n'est mesuré qu'une fois."
+        polite:
+            title: "Respectueux du site"
+            text: "robots.txt est suivi, les connexions simultanées sont limitées et aucune adresse du réseau privé n'est accessible."
+        honest:
+            title: "Sans approximation cachée"
+            text: "Le JavaScript des pages n'est pas exécuté : le chargement est une estimation, présentée comme telle."
+    discord:
+        kicker: "Communauté"
+        title: "Rejoignez Net Labs sur Discord"
+        text: "Posez vos questions sur vos analyses, échangez sur le SEO, le GEO et l'IA, et découvrez les nouveautés des outils en avant-première."
+        button: "Rejoindre le Discord"
+    cta:
+        title: "Prêt à passer votre site au crible ?"
+        text: "Jusqu'à %max% pages, résultats en direct, export CSV. Sans compte."
+        button: "Lancer un crawl"
+    tech: "Construit avec"
 
 form:
     url_label: "Adresse du site"
@@ -33,7 +143,6 @@ crawl:
     sitemap: "{0}Aucun sitemap trouvé|{1}1 page dans le sitemap|]1,Inf[%count% pages dans le sitemap"
     limit: "%max% pages au plus"
     export_csv: "Export CSV"
-    new: "Nouveau crawl"
     noscript: "Le crawl s'exécute dans votre navigateur : activez JavaScript."
     error:
         invalid: "Cette adresse n'est pas valide."
@@ -47,9 +156,11 @@ js:
     status:
         running: "Crawl en cours : %done% pages analysées sur %found% trouvées"
         paused: "En pause : %done% pages analysées sur %found% trouvées"
+        throttled: "Le site demande de ralentir : reprise dans %s% s, page par page"
         done: "Terminé : %done% pages analysées"
         stopped: "Arrêté : %done% pages analysées sur %found% trouvées"
         limit: "limite de %max% pages atteinte"
+        blocked: "%n% bloquées par robots.txt (hors limite)"
     pause: "Pause"
     resume: "Reprendre"
     stop: "Arrêter"
@@ -58,6 +169,7 @@ js:
         all: "Toutes les pages"
         errors: "Pages avec une erreur"
         warnings: "Pages avec un avertissement"
+        reset: "Afficher toutes les pages"
     empty: "Aucune page ne correspond au filtre."
     col:
         url: "Page"
@@ -146,6 +258,13 @@ js:
         more: "et %n% autres"
         yes: "oui"
         no: "non"
+        why: "Pourquoi"
+        fix: "Corriger"
+        blocking_scripts: "Scripts bloquants"
+        blocking_styles: "CSS bloquants"
+        legacy_images: "Images à convertir (WebP, AVIF)"
+        short_cache: "Ressources sans cache long"
+        no_cache: "aucun cache"
     synth:
         pages: "Pages analysées"
         weight: "Poids médian"
@@ -153,7 +272,10 @@ js:
         load: "Chargement médian"
         errors: "Pages avec une erreur"
         composition: "Composition du poids, toutes pages"
-        issues: "Problèmes les plus fréquents"
+        issues: "À corriger en premier"
+        score: "Santé du site"
+        score_hint: "Moyenne des pages : chacune part de 100 et perd %error% points par erreur et %warning% par avertissement."
+        share: "%n% pages · %p% %"
         no_issue: "Aucun problème détecté pour l'instant."
     unit:
         b: "o"
@@ -161,6 +283,8 @@ js:
         mb: "Mo"
         ms: "ms"
         s: "s"
+        h: "h"
+        d: "j"
     csv:
         title_length: "Longueur du title"
         meta_length: "Longueur de la meta description"
@@ -194,6 +318,11 @@ issue:
     broken_resources: "Ressources en erreur"
     mixed_content: "Contenu mixte (ressources http sur une page https)"
     incomplete: "Mesure incomplète (ressources trop lentes)"
+    blocking_scripts: "Scripts bloquants dans le head"
+    blocking_styles: "Trop de CSS bloquants (plus de 3)"
+    legacy_images: "Images à convertir en WebP ou AVIF"
+    short_cache: "Cache navigateur court (moins d'une semaine)"
+    lazy_first_image: "Première image en lazy loading (LCP retardé)"
     duplicate_title: "Title en double"
     duplicate_meta: "Meta description en double"
     duplicate_content: "Contenu identique à une autre page"
@@ -203,7 +332,135 @@ issue:
     not_in_sitemap: "Absente du sitemap"
     deep: "Profonde (plus de 3 clics depuis l'accueil)"
 
+# Pour chaque problème : pourquoi il compte, puis comment le corriger (détail d'une page, synthèse).
+help:
+    http_error:
+        why: "La page ne s'affiche pas : visiteurs et moteurs tombent sur une erreur."
+        fix: "Rétablir la page, ou la rediriger en 301 vers la page la plus proche et corriger les liens qui y mènent."
+    redirect:
+        why: "Information : cette adresse redirige. Seuls les liens qui y mènent encore posent problème (voir « Liens vers des redirections »)."
+        fix: "Garder la redirection pour les liens externes et pointer les liens internes vers l'adresse finale."
+    blocked:
+        why: "Information : robots.txt interdit l'exploration de cette adresse, qui n'est analysée ni ici ni par les moteurs."
+        fix: "Rien à faire si c'est voulu (administration, recherche interne) ; sinon, retirer la règle Disallow."
+    noindex:
+        why: "Information : la page est exclue des résultats, souvent volontairement (mentions légales, panier, recherche interne). Ses balises et son contenu ne sont donc pas contrôlés."
+        fix: "Rien à faire si c'est voulu ; sinon, retirer noindex de la balise meta robots ou de l'en-tête X-Robots-Tag."
+    canonical_elsewhere:
+        why: "Information : la page désigne une autre adresse comme version à indexer (doublon, paramètres, pagination). Ses balises et son contenu ne sont donc pas contrôlés."
+        fix: "Rien à faire si c'est voulu ; sinon, faire pointer la canonical vers la page elle-même."
+    title_missing:
+        why: "Le title est le titre affiché dans les résultats de recherche ; sans lui, Google en invente un."
+        fix: "Écrire un title unique de 30 à 60 caractères, avec le sujet principal au début."
+    title_short:
+        why: "Un title trop court décrit mal la page et laisse de la place inexploitée."
+        fix: "Le compléter jusqu'à 30 à 60 caractères : sujet, précision, éventuellement la marque."
+    title_long:
+        why: "Au-delà d'environ 60 caractères, Google coupe le title dans ses résultats."
+        fix: "Le ramener à 60 caractères en gardant les mots importants au début."
+    meta_missing:
+        why: "Sans meta description, Google compose lui-même un extrait, souvent moins engageant."
+        fix: "Rédiger 70 à 160 caractères qui résument la page et donnent envie de cliquer."
+    meta_short:
+        why: "Une description très courte est souvent remplacée par Google."
+        fix: "L'étoffer jusqu'à 70 à 160 caractères."
+    meta_long:
+        why: "Au-delà d'environ 160 caractères, l'extrait est coupé."
+        fix: "La resserrer à 160 caractères, l'essentiel en premier."
+    h1_missing:
+        why: "Le H1 annonce le sujet de la page aux visiteurs comme aux moteurs."
+        fix: "Ajouter un H1 unique qui reprend le sujet principal."
+    h1_multiple:
+        why: "Plusieurs H1 brouillent le sujet principal de la page."
+        fix: "Garder un seul H1 et passer les autres en H2."
+    heading_skip:
+        why: "Un niveau sauté (un H3 juste après le H1) casse la hiérarchie lue par les moteurs et les lecteurs d'écran."
+        fix: "Respecter l'ordre H1, H2, H3 sans sauter de niveau."
+    thin_content:
+        why: "Moins de 300 mots suffisent rarement à couvrir un sujet : la page peut être jugée mince."
+        fix: "Enrichir le contenu, fusionner la page avec une page proche, ou la passer en noindex si elle est utilitaire."
+    lang_missing:
+        why: "Sans attribut lang, moteurs et lecteurs d'écran doivent deviner la langue."
+        fix: "Ajouter lang=\"fr\" (ou la langue de la page) sur la balise html."
+    viewport_missing:
+        why: "Sans meta viewport, la page s'affiche sur mobile comme une version ordinateur réduite."
+        fix: "Ajouter <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> dans le head."
+    image_alt_missing:
+        why: "Le texte alternatif décrit l'image aux moteurs et aux lecteurs d'écran."
+        fix: "Ajouter un alt descriptif, ou alt=\"\" pour une image purement décorative."
+    image_heavy:
+        why: "Les images lourdes sont la première cause de pages lentes."
+        fix: "Les redimensionner à leur taille d'affichage et les compresser, idéalement en WebP ou AVIF."
+    image_dimensions:
+        why: "Sans width et height, la page se décale pendant le chargement (CLS)."
+        fix: "Indiquer width et height sur chaque image, ou réserver leur place en CSS avec aspect-ratio."
+    heavy_page:
+        why: "Une page lourde se charge lentement, surtout sur mobile."
+        fix: "Commencer par les postes les plus gros du détail Performance : images, polices, scripts."
+    slow_ttfb:
+        why: "Le serveur met trop de temps à répondre : tout le reste attend."
+        fix: "Activer un cache de page (serveur ou CDN), alléger les requêtes à la base, vérifier l'hébergement."
+    slow_load:
+        why: "Au-delà de 3 s, une part croissante des visiteurs mobiles abandonne."
+        fix: "Réduire le poids des ressources et le TTFB ; le détail Performance montre les postes à traiter."
+    many_requests:
+        why: "Chaque requête ajoute de l'attente, surtout sur mobile."
+        fix: "Regrouper les CSS et JS, retirer les scripts inutiles, passer les icônes en SVG dans la page."
+    no_compression:
+        why: "Un HTML non compressé pèse 3 à 5 fois plus lourd."
+        fix: "Activer gzip ou brotli sur le serveur (mod_deflate, réglages de l'hébergeur)."
+    broken_resources:
+        why: "Des images, styles ou scripts manquent : la page peut s'afficher mal."
+        fix: "Corriger ou retirer les adresses en erreur listées dans le détail."
+    mixed_content:
+        why: "Les navigateurs bloquent les ressources en http sur une page en https."
+        fix: "Passer ces adresses en https."
+    incomplete:
+        why: "Certaines ressources n'ont pas répondu à temps : poids et chargement sont sous-estimés."
+        fix: "Relancer le crawl ; si cela persiste, vérifier ces ressources, sans doute très lentes."
+    blocking_scripts:
+        why: "Un script du head sans defer ni async bloque l'affichage le temps d'être téléchargé et exécuté."
+        fix: "Ajouter defer (ou async pour un script indépendant), ou déplacer le script en fin de page."
+    blocking_styles:
+        why: "Chaque feuille de style du head retarde le premier affichage."
+        fix: "Regrouper les CSS en un ou deux fichiers et différer ceux qui ne servent pas au premier écran."
+    legacy_images:
+        why: "À qualité égale, WebP et AVIF pèsent souvent 25 à 50 % de moins que JPEG ou PNG."
+        fix: "Convertir ces images en WebP ou AVIF, avec la balise picture pour garder un format de secours."
+    short_cache:
+        why: "Sans cache long, le navigateur retélécharge styles, scripts et images à chaque visite."
+        fix: "Servir les fichiers statiques avec Cache-Control: max-age d'au moins une semaine, idéalement un an avec des noms versionnés."
+    lazy_first_image:
+        why: "La première image est souvent le plus grand élément de l'écran (LCP) : en lazy loading, elle arrive en retard."
+        fix: "Retirer loading=\"lazy\" des images visibles au chargement et le garder pour celles plus bas."
+    duplicate_title:
+        why: "Des titles identiques empêchent les moteurs de distinguer les pages."
+        fix: "Rendre chaque title unique et propre au contenu de sa page."
+    duplicate_meta:
+        why: "Des descriptions identiques n'aident ni les moteurs ni les internautes à choisir."
+        fix: "Écrire une description propre à chaque page."
+    duplicate_content:
+        why: "Deux pages au texte identique se font concurrence ; les moteurs n'en gardent qu'une."
+        fix: "Fusionner les pages, rediriger l'une vers l'autre ou ajouter une canonical."
+    broken_links:
+        why: "Les liens vers des pages en erreur gênent les visiteurs et gaspillent l'exploration."
+        fix: "Corriger les liens listés dans le détail, ou rediriger les pages disparues."
+    redirect_links:
+        why: "Un lien vers une redirection impose un détour à chaque clic et à chaque exploration."
+        fix: "Remplacer ces liens par l'adresse finale indiquée dans le détail."
+    orphan:
+        why: "Aucune page du site ne lie celle-ci : les moteurs la découvrent mal et la jugent peu importante."
+        fix: "Ajouter des liens depuis les pages proches : menu, catégorie, articles liés."
+    not_in_sitemap:
+        why: "Le sitemap aide les moteurs à trouver et revisiter les pages importantes."
+        fix: "Ajouter la page au sitemap, ou vérifier qu'elle doit vraiment être indexée."
+    deep:
+        why: "À plus de 3 clics de l'accueil, une page est moins explorée et reçoit moins de liens."
+        fix: "La rapprocher : liens depuis l'accueil, les catégories ou les pages les plus vues."
+
 legal:
+    meta_title: "Mentions légales et confidentialité"
+    meta_description: "Mentions légales de SemSpider, outil d’audit SEO technique de Net Labs : éditeur, hébergeur, données personnelles et propriété intellectuelle."
     title: "Mentions légales"
     publisher:
         heading: "Éditeur"
@@ -214,7 +471,8 @@ legal:
         text: "OVH SAS<br>2 rue Kellermann, 59100 Roubaix, France<br>ovhcloud.com"
     data:
         heading: "Données personnelles"
-        no_account: "SemSpider ne propose pas de compte, ne dépose aucun cookie de suivi et n'utilise aucun outil de mesure d'audience."
+        no_account: "SemSpider ne propose pas de compte."
+        analytics: "La fréquentation du site est mesurée avec Yandex Metrika (Yandex LLC) : des cookies (_ym_*) enregistrent les pages vues, les clics et le déroulement des visites (Webvisor) afin d'améliorer le service. Ces données sont traitées par Yandex, y compris hors de l'Union européenne."
         third_parties: "Les pages du site saisi sont téléchargées par le serveur de SemSpider ; les résultats ne sont gardés que dans votre navigateur. Seules les mesures des fichiers partagés (feuilles de style, scripts, images) et le robots.txt du site restent une heure en cache."
     ip:
         heading: "Propriété intellectuelle"

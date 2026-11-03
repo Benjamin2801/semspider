@@ -10,6 +10,15 @@ document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
     });
 });
 
+// Les liens « Crawler mon site » de l'accueil remontent au formulaire.
+document.querySelectorAll('[data-to-form]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('url')?.focus({ preventScroll: true });
+    });
+});
+
 const crawlSection = document.querySelector('[data-crawl]');
 if (crawlSection) {
     startCrawl(crawlSection);
@@ -22,9 +31,12 @@ function startCrawl(section) {
     const t = (key, params = {}) => (config.i18n[key] ?? key).replace(/%(\w+)%/g, (_, name) => params[name] ?? '');
     const $ = (selector) => section.querySelector(selector);
 
-    const DEEP_CLICKS = 3;
     const DUPLICATE_MIN_WORDS = 50;
-    const SEVERITY_ORDER = { error: 0, warning: 1, notice: 2 };
+    const SEVERITY_ORDER = { error: 0, warning: 1, notice: 2, info: 3 };
+    // Priorité d'un problème : son poids × le nombre de pages touchées.
+    const SEVERITY_WEIGHT = { error: 10, warning: 3, notice: 1, info: 0 };
+    // Score de santé : chaque page part de 100 et perd ces points par problème (plancher 0) ; le site, la moyenne.
+    const SCORE_PENALTY = { error: 25, warning: 10, notice: 2, info: 0 };
 
     const pages = new Map();
     const depths = new Map([[config.root, 0]]);
@@ -48,13 +60,22 @@ function startCrawl(section) {
         }
     };
 
-    const discover = (url, depth) => {
+    // Adresses interdites par robots.txt (signalées par le serveur) : affichées, mais jamais demandées ni comptées
+    // dans la limite de pages ; sinon les paramètres d'une boutique (panier, filtres) la consomment.
+    let blockedCount = 0;
+    const counted = () => depths.size - blockedCount;
+    const discover = (url, depth, blocked = false) => {
         if (!depths.has(url)) {
-            if (depths.size >= config.maxPages) {
+            if (!blocked && counted() >= config.maxPages) {
                 return;
             }
             depths.set(url, depth);
-            queue.push(url);
+            if (blocked) {
+                ++blockedCount;
+                record({ ...failed(url), error: 'robots', issues: ['blocked'] });
+            } else {
+                queue.push(url);
+            }
         } else if (depth !== null && (depths.get(url) === null || depth < depths.get(url))) {
             depths.set(url, depth);
         }
@@ -89,7 +110,13 @@ function startCrawl(section) {
     const rootHostname = new URL(config.root).host;
     const path = (url) => {
         const parsed = new URL(url);
-        const local = decodeURI(parsed.pathname + parsed.search);
+        // Accents lisibles (é plutôt que %C3%A9), mais espaces et caractères invisibles gardés encodés : un lien
+        // vers « /contact/%20 » ne doit pas ressembler à « /contact/ ».
+        let local = parsed.pathname + parsed.search;
+        try {
+            local = decodeURI(local).replace(/[\s\u0000-\u001F\u007F-\u009F​-‍﻿]/gu, (c) => encodeURIComponent(c));
+        } catch {
+        }
 
         return parsed.host === rootHostname ? local : `${parsed.host}${local}`;
     };
@@ -101,6 +128,7 @@ function startCrawl(section) {
     const brokenTargets = (page) => linkedPages(page)
         .filter((target) => (target.status === 0 ? target.error !== 'robots' : target.status >= 400));
     const redirectTargets = (page) => linkedPages(page).filter((target) => target.redirect);
+    const pageScore = (page) => Math.max(0, 100 - issuesOf(page).reduce((sum, code) => sum + SCORE_PENALTY[config.issues[code].severity], 0));
     const hasSeverity = (page, severity) => issuesOf(page).some((code) => config.issues[code].severity === severity);
 
     // Colonnes du tableau : seule la page a une largeur libre, le tableau tient en 1000 px sans défilement.
@@ -111,7 +139,7 @@ function startCrawl(section) {
     const rangeClass = (value, [min, max]) => (!value ? 'is-bad' : value < min || value > max ? 'is-warn' : 'is-good');
     const metric = (value, className = null, title = null) => el('span', { class: `metric ${className ?? ''}`, title }, String(value));
     const severityCounts = (page) => {
-        const counts = { error: 0, warning: 0, notice: 0 };
+        const counts = { error: 0, warning: 0, notice: 0, info: 0 };
         issuesOf(page).forEach((code) => counts[config.issues[code].severity]++);
 
         return counts;
@@ -122,7 +150,7 @@ function startCrawl(section) {
     const columns = [
         { key: 'url', sort: (p) => p.url, cell: pageCell, className: 'is-page' },
         { key: 'status', sort: (p) => p.status, cell: statusCell },
-        { key: 'depth', hint: true, sort: (p) => depths.get(p.url) ?? 99, cell: (p) => metric(depths.get(p.url) ?? '—', (depths.get(p.url) ?? 0) > DEEP_CLICKS ? 'is-warn' : null), className: 'is-number' },
+        { key: 'depth', hint: true, sort: (p) => depths.get(p.url) ?? 99, cell: (p) => metric(depths.get(p.url) ?? '—', (depths.get(p.url) ?? 0) > limits.depth ? 'is-warn' : null), className: 'is-number' },
         { key: 'weight', hint: true, sort: (p) => p.totalBytes, cell: weightCell, className: 'is-number' },
         { key: 'ttfb', hint: true, sort: (p) => p.ttfb ?? -1, cell: (p) => timeCell(p.ttfb, limits.ttfb), className: 'is-number' },
         { key: 'load', hint: true, sort: (p) => p.loadMs ?? -1, cell: (p) => timeCell(p.loadMs, limits.load), className: 'is-number' },
@@ -191,7 +219,7 @@ function startCrawl(section) {
         const codes = issuesOf(page);
 
         return el('span', { class: 'issue-counts', title: codes.map((code) => config.issues[code].label).join('\n') },
-            ...Object.entries(severityCounts(page)).filter(([, n]) => n).map(([severity, n]) => el('span', { class: `pill is-${severity}` }, String(n))));
+            ...Object.entries(severityCounts(page)).filter(([severity, n]) => n && severity !== 'info').map(([severity, n]) => el('span', { class: `pill is-${severity}` }, String(n))));
     }
 
     // Problèmes qui demandent de connaître tout le site.
@@ -232,7 +260,7 @@ function startCrawl(section) {
             if (sitemap.size && !sitemap.has(page.url) && indexable.includes(page)) {
                 add(page.url, 'not_in_sitemap');
             }
-            if ((depths.get(page.url) ?? 0) > DEEP_CLICKS) {
+            if ((depths.get(page.url) ?? 0) > limits.depth) {
                 add(page.url, 'deep');
             }
         });
@@ -242,24 +270,31 @@ function startCrawl(section) {
 
     // Synthèse au-dessus du tableau.
     function renderSynthesis() {
-        const all = [...pages.values()];
+        // Les adresses bloquées par robots.txt ne sont pas analysées : elles n'entrent ni dans les totaux ni dans le score.
+        const all = [...pages.values()].filter((p) => p.error !== 'robots');
         const html = all.filter((p) => p.html);
         const withError = all.filter((p) => hasSeverity(p, 'error')).length;
         const totals = {};
         html.forEach((p) => Object.entries(p.bytes).forEach(([type, n]) => { totals[type] = (totals[type] ?? 0) + n; }));
         const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0);
 
+        // À corriger en premier : gravité × nombre de pages touchées.
         const counts = new Map();
         all.forEach((p) => issuesOf(p).forEach((code) => counts.set(code, (counts.get(code) ?? 0) + 1)));
-        const top = [...counts.entries()]
-            .sort((a, b) => SEVERITY_ORDER[config.issues[a[0]].severity] - SEVERITY_ORDER[config.issues[b[0]].severity] || b[1] - a[1])
-            .slice(0, 8);
+        const impact = ([code, n]) => SEVERITY_WEIGHT[config.issues[code].severity] * n;
+        // Les informations (choix volontaires) n'ont pas d'impact : elles n'y figurent pas.
+        const top = [...counts.entries()].filter((entry) => impact(entry) > 0).sort((a, b) => impact(b) - impact(a)).slice(0, 8);
 
-        const stat = (label, value, className = null) => el('div', { class: `stat ${className ?? ''}` }, el('dt', {}, label), el('dd', {}, value));
+        const stat = (label, value, className = null, title = null) => el('div', { class: `stat ${className ?? ''}`, title },
+            el('dt', {}, label), el('dd', {}, value));
         const weightMedian = median(html.map((p) => p.totalBytes));
+        const score = all.length ? Math.round(all.reduce((sum, p) => sum + pageScore(p), 0) / all.length) : null;
 
         $('[data-synthesis]').replaceChildren(
             el('dl', { class: 'stats' },
+                stat(t('synth.score'), score === null ? '—' : [String(score), el('small', {}, '/100')],
+                    score === null ? null : `is-score ${score >= 80 ? 'is-good' : score >= 50 ? 'is-warn' : 'is-bad'}`,
+                    t('synth.score_hint', { error: SCORE_PENALTY.error, warning: SCORE_PENALTY.warning })),
                 stat(t('synth.pages'), number.format(all.length)),
                 stat(t('synth.weight'), weightMedian === null ? '—' : bytes(weightMedian)),
                 stat(t('synth.ttfb'), duration(median(html.map((p) => p.ttfb)))),
@@ -276,10 +311,19 @@ function startCrawl(section) {
                         el('b', {}, `${share} %`));
                 }))),
             el('div', { class: 'synthesis-card' },
-                el('h2', {}, t('synth.issues')),
-                top.length ? el('ul', { class: 'top-issues' }, top.map(([code, n]) => el('li', {},
-                    el('button', { type: 'button', 'data-issue': code },
-                        el('span', { class: `dot is-${config.issues[code].severity}` }), config.issues[code].label, el('b', {}, number.format(n))))))
+                el('div', { class: 'synthesis-head' },
+                    el('h2', {}, t('synth.issues')),
+                    isFiltered() ? el('button', { type: 'button', class: 'link-button', 'data-reset': true }, t('filter.reset')) : null),
+                top.length ? el('ol', { class: 'top-issues' }, top.map(([code, n]) => el('li', {},
+                    el('button', {
+                        type: 'button',
+                        'data-issue': code,
+                        'aria-pressed': String(filter.value === code),
+                        title: `${config.issues[code].why}\n→ ${config.issues[code].fix}`,
+                    },
+                        el('span', { class: `dot is-${config.issues[code].severity}` }),
+                        el('span', { class: 'top-issue-label' }, config.issues[code].label),
+                        el('b', {}, t('synth.share', { n: number.format(n), p: percent(n, all.length) }))))))
                     : el('p', { class: 'muted' }, t('synth.no_issue'))),
         );
     }
@@ -306,7 +350,7 @@ function startCrawl(section) {
         head.querySelectorAll('[data-sort]').forEach((button) => {
             button.closest('th').setAttribute('aria-sort', button.dataset.sort === key ? (sort.direction > 0 ? 'ascending' : 'descending') : 'none');
         });
-        renderTable();
+        refreshView();
     });
 
     function renderFilter() {
@@ -322,6 +366,8 @@ function startCrawl(section) {
         );
         filter.value = [...filter.options].some((option) => option.value === selected) ? selected : '';
     }
+
+    const isFiltered = () => Boolean(filter.value || search.value.trim() || sort.key !== 'order');
 
     function visiblePages() {
         const text = search.value.trim().toLowerCase();
@@ -379,14 +425,31 @@ function startCrawl(section) {
             drawer.open ? openDrawers.add(drawer.dataset.drawer) : openDrawers.delete(drawer.dataset.drawer);
         }
     }, true);
-    search.addEventListener('input', renderTable);
-    filter.addEventListener('change', renderTable);
+    // Filtre, recherche et tri se lisent aussi dans la synthèse (problème choisi, bouton pour tout réafficher).
+    const refreshView = () => {
+        renderSynthesis();
+        renderTable();
+    };
+    search.addEventListener('input', refreshView);
+    filter.addEventListener('change', refreshView);
     $('[data-synthesis]').addEventListener('click', (event) => {
+        if (event.target.closest('[data-reset]')) {
+            filter.value = '';
+            search.value = '';
+            sort = { key: 'order', direction: 1 };
+            head.querySelectorAll('th').forEach((th) => th.removeAttribute('aria-sort'));
+            refreshView();
+
+            return;
+        }
         const code = event.target.closest('[data-issue]')?.dataset.issue;
         if (code) {
-            filter.value = code;
-            renderTable();
-            filter.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Un second clic sur le problème choisi le désélectionne.
+            filter.value = filter.value === code ? '' : code;
+            refreshView();
+            if (filter.value) {
+                filter.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
     });
 
@@ -398,10 +461,17 @@ function startCrawl(section) {
             el('dt', {}, t(`detail.${key}`)), el('dd', {}, value ?? '—'))));
         const yesNo = (value) => t(value ? 'detail.yes' : 'detail.no');
         const codes = issuesOf(page);
+        // Chaque problème se déplie : pourquoi il compte, comment le corriger.
         const issues = codes.length
             ? el('ul', { class: 'issue-list' }, codes.map((code) => el('li', {},
-                el('span', { class: `dot is-${config.issues[code].severity}` }), config.issues[code].label)))
+                el('details', { class: 'issue-help', 'data-drawer': `${page.url}|help|${code}`, open: openDrawers.has(`${page.url}|help|${code}`) },
+                    el('summary', {}, el('span', { class: `dot is-${config.issues[code].severity}` }), config.issues[code].label),
+                    el('p', {}, el('b', {}, t('detail.why')), ' ', config.issues[code].why),
+                    el('p', {}, el('b', {}, t('detail.fix')), ' ', config.issues[code].fix)))))
             : el('p', { class: 'muted' }, t('detail.no_issue'));
+        const ttl = (seconds) => (!seconds ? t('detail.no_cache') : seconds < 86_400
+            ? `${number.format(Math.round(seconds / 3600))} ${t('unit.h')}`
+            : `${number.format(Math.round(seconds / 86_400))} ${t('unit.d')}`);
         const drawer = (key, items) => (items.length ? el('details', {
             class: 'drawer',
             'data-drawer': `${page.url}|${key}`,
@@ -414,6 +484,9 @@ function startCrawl(section) {
             drawer('broken_links', brokenTargets(page).map((target) => [link(target.url, path(target.url)), el('span', { class: 'status is-error' }, String(target.status || t(`error.${target.error}`)))])),
             drawer('redirect_links', redirectTargets(page).map((target) => [link(target.url, path(target.url)), ' → ', link(target.redirect)])),
             drawer('broken', (page.brokenResources ?? []).map((resource) => [link(resource.url), el('span', { class: 'status is-error' }, String(resource.status || t('error.network')))])),
+            drawer('blocking_scripts', (page.blockingScripts ?? []).map((url) => link(url))),
+            drawer('legacy_images', (page.legacyImages ?? []).map((image) => [link(image.url), el('span', { class: 'metric is-warn' }, `${image.mime.replace('image/', '').toUpperCase()} · ${bytes(image.bytes)}`)])),
+            drawer('short_cache', (page.shortCache ?? []).map((resource) => [link(resource.url), el('span', { class: 'metric is-warn' }, ttl(resource.ttl))])),
             drawer('heavy_images', (page.heavyImages ?? []).map((image) => [link(image.url), el('span', { class: 'metric is-warn' }, bytes(image.bytes))])),
             drawer('images_without_alt', (page.imagesWithoutAlt ?? []).map((url) => link(url))),
             drawer('incoming', [...(incoming.get(page.url) ?? [])].map((url) => link(url, path(url)))));
@@ -469,7 +542,11 @@ function startCrawl(section) {
                         el('th', { scope: 'row' }, el('i', { class: `swatch is-${type}` }), t(`type.${type}`)),
                         el('td', {}, bytes(page.bytes[type])),
                         el('td', {}, `${percent(page.bytes[type], page.totalBytes)} %`))))),
-                    facts([['compression', yesNo(page.compressed), page.compressed ? null : 'is-warn']])),
+                    facts([
+                        ['compression', yesNo(page.compressed), page.compressed ? null : 'is-warn'],
+                        ['blocking_scripts', number.format(page.blockingScripts.length), page.blockingScripts.length ? 'is-warn' : null],
+                        ['blocking_styles', number.format(page.blockingStyles), page.blockingStyles > limits.blockingStyles ? 'is-warn' : null],
+                    ])),
                 section('diagnosis',
                     issues,
                     facts([
@@ -521,6 +598,7 @@ function startCrawl(section) {
             ['detail.h3', (p) => p.h3.join(' | ')],
             ['col.words', (p) => p.words],
             ['col.incoming', (p) => incoming.get(p.url)?.size ?? 0],
+            ['synth.score', pageScore],
             ['col.issues', (p) => issuesOf(p).map((code) => config.issues[code].label).join(' | ')],
             ['detail.canonical', (p) => p.canonical],
             ['detail.robots', (p) => p.robots],
@@ -543,13 +621,17 @@ function startCrawl(section) {
     stopButton.hidden = false;
 
     function renderStatus() {
-        const params = { done: number.format(pages.size), found: number.format(depths.size), max: number.format(config.maxPages) };
+        const analysed = pages.size - blockedCount;
+        const params = { done: number.format(analysed), found: number.format(counted()), max: number.format(config.maxPages) };
         let status = t(`status.${state}`, params);
-        if (depths.size >= config.maxPages && state !== 'running') {
+        if (blockedCount) {
+            status += ` · ${t('status.blocked', { n: number.format(blockedCount) })}`;
+        }
+        if (counted() >= config.maxPages && state !== 'running') {
             status += ` (${t('status.limit', params)})`;
         }
         $('[data-status]').textContent = status;
-        $('[data-progress]').style.width = `${percent(pages.size, depths.size)}%`;
+        $('[data-progress]').style.width = `${percent(analysed, counted())}%`;
         section.classList.toggle('is-running', state === 'running');
         pauseButton.querySelector('span').textContent = t(state === 'paused' ? 'resume' : 'pause');
         pauseButton.classList.toggle('is-paused', state === 'paused');
@@ -589,17 +671,26 @@ function startCrawl(section) {
         if (page.redirect && isInternal(page.redirect)) {
             discover(page.redirect, depth);
         }
+        const blocked = new Set(page.blockedLinks ?? []);
         page.links.forEach((link) => {
             if (!incoming.has(link)) {
                 incoming.set(link, new Set());
             }
             incoming.get(link).add(page.url);
-            discover(link, depth === null ? null : depth + 1);
+            discover(link, depth === null ? null : depth + 1, blocked.has(link));
         });
     }
 
     // Une seule boucle à la fois : une reprise pendant qu'un lot est en route ne doit pas en lancer une seconde.
     let looping = false;
+    // 503 et 429 sont souvent des refus passagers (trop de requêtes rapprochées) : la page est retentée
+    // deux fois, après la pause demandée par Retry-After, sinon 5 puis 10 s.
+    const THROTTLED = [429, 503];
+    const MAX_RETRIES = 2;
+    const RETRY_PAUSE_S = 5;
+    const MAX_PAUSE_S = 30;
+    const retries = new Map();
+    let batchSize = config.batchSize;
 
     async function run() {
         if (looping) {
@@ -617,7 +708,7 @@ function startCrawl(section) {
                 config.sitemap.forEach((url) => discover(url, null));
                 continue;
             }
-            const batch = queue.splice(0, config.batchSize);
+            const batch = queue.splice(0, batchSize);
             let reports;
             try {
                 reports = await fetchBatch(batch);
@@ -628,8 +719,25 @@ function startCrawl(section) {
                     reports = batch.map(failed);
                 }
             }
-            reports.forEach(record);
+            let pause = 0;
+            reports.forEach((report) => {
+                const attempts = retries.get(report.url) ?? 0;
+                if (!THROTTLED.includes(report.status) || attempts >= MAX_RETRIES) {
+                    record(report);
+
+                    return;
+                }
+                // Le serveur demande de ralentir : la page est redemandée plus tard, et le crawl continue page par page.
+                retries.set(report.url, attempts + 1);
+                queue.push(report.url);
+                batchSize = 1;
+                pause = Math.max(pause, Math.min(MAX_PAUSE_S, report.retryAfter ?? RETRY_PAUSE_S * (attempts + 1)));
+            });
             render();
+            if (pause && state === 'running') {
+                $('[data-status]').textContent = t('status.throttled', { s: pause });
+                await new Promise((resolve) => setTimeout(resolve, pause * 1000));
+            }
         }
         looping = false;
         render();

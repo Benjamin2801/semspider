@@ -3,6 +3,8 @@
 namespace App\Tests\Crawl;
 
 use App\Crawl\HtmlAnalyzer;
+use App\Crawl\ResourceMeasure;
+use App\Crawl\ResourceMeter;
 use App\Crawl\ResourceType;
 use App\Crawl\SiteScope;
 use App\Tests\Http\FakeSite;
@@ -95,6 +97,63 @@ final class HtmlAnalyzerTest extends TestCase
         self::assertSame(['https://site.test/vrai'], $page->links);
         self::assertSame(['Product'], $page->structuredData);
         self::assertSame(2, $page->words, 'Le code des scripts n\'est pas du texte.');
+    }
+
+    public function testFindsRenderBlockingResources(): void
+    {
+        $page = (new HtmlAnalyzer())->analyze(
+            <<<'HTML'
+                <html><head>
+                <link rel="stylesheet" href="/a.css"><link rel="Stylesheet" href="/b.css"><link rel="stylesheet" href="/print.css" media="print">
+                <script src="/bloque.js"></script><script src="/defer.js" defer></script><script src="/async.js" async></script>
+                <script type="module" src="/module.js"></script><script>var enLigne = 1;</script>
+                </head><body><img src="/hero.jpg" loading="lazy"><script src="/pied.js"></script></body></html>
+                HTML,
+            'https://site.test/',
+            new SiteScope('https://site.test/'),
+        );
+
+        self::assertSame(['https://site.test/bloque.js'], $page->blockingScripts, 'Seuls les scripts externes du <head> sans defer, async ni module bloquent.');
+        self::assertSame(2, $page->blockingStyles, 'La feuille media="print" ne bloque pas l\'affichage.');
+        self::assertTrue($page->images[0]->lazy);
+    }
+
+    public function testReadsCacheLifetime(): void
+    {
+        self::assertSame(31_536_000, ResourceMeasure::cacheTtl(['cache-control' => ['public, max-age=31536000, immutable']]));
+        self::assertSame(0, ResourceMeasure::cacheTtl(['cache-control' => ['no-cache, max-age=600']]));
+        self::assertSame(3_600, ResourceMeasure::cacheTtl([
+            'date' => ['Wed, 28 Oct 2026 10:00:00 GMT'],
+            'expires' => ['Wed, 28 Oct 2026 11:00:00 GMT'],
+        ]));
+        self::assertSame(0, ResourceMeasure::cacheTtl([]));
+    }
+
+    public function testReadsUnicodeRanges(): void
+    {
+        self::assertSame([[0, 255], [0x131, 0x131], [0x400, 0x4FF]], ResourceMeter::unicodeRanges('U+0000-00FF, U+0131, U+04??'));
+        self::assertSame([], ResourceMeter::unicodeRanges('n\'importe quoi'));
+    }
+
+    public function testPicksFontsLikeABrowser(): void
+    {
+        // Comme Google Fonts : latin étendu, puis latin, déclarés dans cet ordre pour la même police.
+        $css = new ResourceMeasure('https://site.test/s.css', ResourceType::Css, 0, 0, 200, fontFaces: [
+            ['url' => 'https://site.test/latin-ext.woff2', 'key' => 'a|400|normal|', 'ranges' => [[0x100, 0x24F]]],
+            ['url' => 'https://site.test/latin.woff2', 'key' => 'a|400|normal|', 'ranges' => [[0, 0xFF], [0x152, 0x153]]],
+            ['url' => 'https://site.test/gras.woff2', 'key' => 'a|700|normal|', 'ranges' => []],
+        ]);
+
+        self::assertSame(
+            ['https://site.test/latin.woff2' => true, 'https://site.test/gras.woff2' => true],
+            $css->usedFonts([0x41, 0x153]),
+            '« œ » est couvert par les deux : la dernière déclarée (latin) suffit. Sans plage, la police sert à tout.',
+        );
+        self::assertEqualsCanonicalizing(
+            ['https://site.test/latin-ext.woff2', 'https://site.test/latin.woff2', 'https://site.test/gras.woff2'],
+            array_keys($css->usedFonts([0x41, 0x142])),
+            '« ł » n\'existe qu\'en latin étendu.',
+        );
     }
 
     public function testReadsLatin1Pages(): void

@@ -13,3 +13,12 @@ Options -Indexes -MultiViews
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ %{ENV:BASE}/index.php [L]
 </IfModule>
+
+# Cache navigateur long : CSS et JS sont versionnés (?v=), le favicon change rarement.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule>

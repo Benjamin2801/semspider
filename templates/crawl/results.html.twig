@@ -11,6 +11,12 @@
 {% endblock %}
 
 {% block body %}
+    {# Le formulaire reste en haut, comme sur SemSeeker : un autre site se lance sans revenir à l'accueil. #}
+    <section class="results-header">
+        {# Prérempli sans « https:// » ni « / » final : l'adresse de la page reste lisible (?url=liliraf.fr). #}
+        {{ include('crawl/_form.html.twig', {url: site.root starts with 'https://' ? site.root[8:]|trim('/', 'right') : site.root}) }}
+    </section>
+
     <section class="crawl" data-crawl data-filename="semspider-{{ host }}.csv">
         <header class="crawl-header">
             <div>
@@ -23,7 +29,6 @@
                     {{ 'crawl.limit'|trans({'%max%': max_pages}) }}
                 </p>
             </div>
-            <a class="button-secondary" href="{{ path('home', {_locale: app.request.locale}) }}">{{ 'crawl.new'|trans }}</a>
         </header>
 
         <div class="crawl-progress">

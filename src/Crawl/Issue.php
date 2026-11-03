@@ -34,6 +34,11 @@ enum Issue: string
     case BrokenResources = 'broken_resources';
     case MixedContent = 'mixed_content';
     case Incomplete = 'incomplete';
+    case BlockingScripts = 'blocking_scripts';
+    case BlockingStyles = 'blocking_styles';
+    case LegacyImages = 'legacy_images';
+    case ShortCache = 'short_cache';
+    case LazyFirstImage = 'lazy_first_image';
     // Calculés par le navigateur, une fois le site connu.
     case DuplicateTitle = 'duplicate_title';
     case DuplicateMeta = 'duplicate_meta';
@@ -44,13 +49,17 @@ enum Issue: string
     case NotInSitemap = 'not_in_sitemap';
     case Deep = 'deep';
 
+    // error, warning et notice sont des problèmes ; info, un choix souvent volontaire (redirection, page bloquée
+    // ou hors de l'index) : affiché, mais compté ni dans le score ni dans les priorités.
     public function severity(): string
     {
         return match ($this) {
+            self::Redirect, self::Blocked, self::Noindex, self::CanonicalElsewhere => 'info',
             self::HttpError, self::TitleMissing, self::H1Missing, self::BrokenResources, self::MixedContent,
             self::BrokenLinks, self::DuplicateTitle, self::DuplicateContent => 'error',
-            self::Redirect, self::Blocked, self::CanonicalElsewhere, self::MetaShort, self::HeadingSkip, self::LangMissing,
-            self::ImageDimensions, self::ManyRequests, self::Incomplete, self::NotInSitemap, self::Deep => 'notice',
+            self::MetaShort, self::HeadingSkip, self::LangMissing,
+            self::ImageDimensions, self::ManyRequests, self::Incomplete, self::BlockingStyles, self::LegacyImages,
+            self::ShortCache, self::NotInSitemap, self::Deep => 'notice',
             default => 'warning',
         };
     }

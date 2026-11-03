@@ -13,8 +13,6 @@ final class ResourceMeter
 {
     private const CACHE_TTL = 3600;
 
-    private const FONT_EXTENSIONS = ['woff2', 'woff', 'ttf', 'otf', 'eot'];
-
     public function __construct(
         private readonly HttpClientInterface $siteClient,
         private readonly CacheItemPoolInterface $cache,
@@ -118,6 +116,9 @@ final class ResourceMeter
         $headers = $response->getHeaders(false);
         $type = $status < 400 ? ResourceType::fromContentType($headers['content-type'][0] ?? null, $expected) : $expected;
         $info = $response->getInfo();
+        [$children, $fontFaces] = ResourceType::Css === $type && $status < 400
+            ? self::cssChildren($response->getContent(false), (string) ($info['url'] ?? $url))
+            : [[], []];
 
         return new ResourceMeasure(
             $url,
@@ -125,12 +126,17 @@ final class ResourceMeter
             self::transferred($info, $received),
             self::milliseconds($info),
             $status,
-            ResourceType::Css === $type && $status < 400 ? self::cssChildren($response->getContent(false), (string) ($info['url'] ?? $url)) : [],
+            $children,
+            strtolower(trim(explode(';', $headers['content-type'][0] ?? '')[0])) ?: null,
+            ResourceMeasure::cacheTtl($headers),
+            $fontFaces,
         );
     }
 
-    // Les images de fond ne sont pas comptées : seules celles des sélecteurs utilisés sont téléchargées.
-    /** @return array<string, ResourceType> */
+    // Feuilles importées et polices d'une feuille de style. Une police par @font-face : sa première source, car
+    // le navigateur prend le premier format qu'il sait lire (woff2 aujourd'hui), avec son unicode-range quand
+    // elle en a un. Les images de fond ne sont pas comptées : seules celles des sélecteurs utilisés sont chargées.
+    /** @return array{array<string, ResourceType>, list<array{url: string, key: string, ranges: list<array{int, int}>}>} */
     private static function cssChildren(string $css, string $base): array
     {
         $children = [];
@@ -141,16 +147,46 @@ final class ResourceMeter
                 $children[$url] = ResourceType::Css;
             }
         }
-        preg_match_all('/url\(\s*["\']?([^"\')]+)["\']?\s*\)/i', $css, $urls);
-        foreach ($urls[1] as $href) {
-            $extension = strtolower(pathinfo((string) parse_url($href, \PHP_URL_PATH), \PATHINFO_EXTENSION));
-            $url = \in_array($extension, self::FONT_EXTENSIONS, true) ? Url::resolve($base, $href) : null;
-            if (null !== $url) {
-                $children[$url] ??= ResourceType::Font;
+
+        $fontFaces = [];
+        preg_match_all('/@font-face\s*\{([^}]*)\}/i', $css, $faces);
+        foreach ($faces[1] as $face) {
+            $url = preg_match('/src\s*:[^;]*?url\(\s*["\']?([^"\')]+)["\']?\s*\)/i', $face, $src) ? Url::resolve($base, $src[1]) : null;
+            if (null === $url) {
+                continue;
             }
+            $children[$url] ??= ResourceType::Font;
+            $fontFaces[] = [
+                'url' => $url,
+                // Une même police : famille, graisse, style et largeur identiques.
+                'key' => implode('|', array_map(
+                    static fn (string $descriptor): string => preg_match('/(?:^|;)\s*'.$descriptor.'\s*:\s*([^;]+)/i', $face, $value) ? strtolower(trim($value[1], " \t\n\r'\"")) : '',
+                    ['font-family', 'font-weight', 'font-style', 'font-stretch'],
+                )),
+                'ranges' => preg_match('/unicode-range\s*:\s*([^;]+)/i', $face, $range) ? self::unicodeRanges($range[1]) : [],
+            ];
         }
 
-        return $children;
+        return [$children, $fontFaces];
+    }
+
+    // « U+0000-00FF, U+0131, U+04?? » : liste de plages [début, fin] de points de code.
+    /** @return list<array{int, int}> */
+    public static function unicodeRanges(string $value): array
+    {
+        $ranges = [];
+        foreach (explode(',', $value) as $part) {
+            if (!preg_match('/^\s*U\+([0-9A-F?]{1,6})(?:-([0-9A-F]{1,6}))?\s*$/i', $part, $match)) {
+                continue;
+            }
+            $end = $match[2] ?? '';
+            $ranges[] = [
+                (int) hexdec(str_replace('?', '0', $match[1])),
+                (int) hexdec('' !== $end ? $end : str_replace('?', 'F', $match[1])),
+            ];
+        }
+
+        return $ranges;
     }
 
     // Toutes les ressources partent en même temps : sans retirer la file d'attente des connexions (6 par serveur)
@@ -183,6 +219,7 @@ final class ResourceMeter
 
     private static function cacheKey(string $url): string
     {
-        return 'resource.'.hash('xxh128', $url);
+        // Le numéro change avec la forme de ResourceMeasure : les mesures en cache d'une version précédente sont ignorées.
+        return 'resource.v4.'.hash('xxh128', $url);
     }
 }

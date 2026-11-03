@@ -3,24 +3,134 @@ meta:
     description: "Crawl your website: weight, TTFB, load time, share of images, CSS and JS, title, meta description, H1, H2 and H3 of every page."
 
 nav:
+    home: "home"
     language: "Language"
     theme: "Switch between light and dark theme"
 
 home:
     title: "Every page of your website, [put under the microscope]."
-    lead: "Weight, response time, resources and SEO tags: up to %max% pages analysed, nothing to install, no account."
+    lead: "Weight, speed, SEO tags and internal linking: a technical audit of your website, page by page, in a few minutes."
+    facts:
+        pages: "Up to %max% pages"
+        robots: "robots.txt followed"
+        account: "No account, nothing to install"
+        live: "Live results"
+    preview:
+        kicker: "Preview"
+        title: "The whole site on one screen: the summary, then one row per page"
+        cta: "Crawl my website now →"
+        rows:
+            home: "Web agency in Lyon: fast, well-ranked websites"
+            guide: "Technical SEO guide: the basics"
+            services: "Our services: website design, redesign, search engine optimisation and maintenance"
+            old: "Page not found"
+    method:
+        kicker: "The method"
+        title: "From an address to an action plan, in five steps"
+        type:
+            title: "Type"
+            text: "Your website's address, with or without www."
+            output: "One address"
+        crawl:
+            title: "Explore"
+            text: "Internal links from the home page, then the sitemap pages no link leads to."
+            output: "Up to %max% pages"
+        measure:
+            title: "Measure"
+            text: "The weight of each file type, TTFB, load time and requests."
+            output: "Performance"
+        diagnose:
+            title: "Diagnose"
+            text: "Over 30 checks per page and across the site, ranked by severity."
+            output: "Ranked issues"
+        export:
+            title: "Export"
+            text: "Sort, filter, open every page, then export every value."
+            output: "CSV"
+            columns: "26 columns"
     measures:
-        title: "What is measured"
+        kicker: "The measures"
+        title: "What SemSpider measures on every page"
         performance:
             title: "Performance"
-            text: "Transferred weight, TTFB, estimated load time, number of requests, share of images, HTML, CSS, JS and the rest."
+            1: "Transferred weight and share of images, HTML, CSS, JS and fonts"
+            2: "TTFB: time to first byte"
+            3: "Estimated load time, fonts included"
+            4: "Number of requests"
+            5: "HTML compression (gzip, brotli)"
+            6: "Heavy images and resources in error"
         seo:
             title: "SEO tags"
-            text: "Title, meta description, H1, H2 and H3 of every page with their length; canonical, noindex, language, structured data."
+            1: "Title and meta description, with their length"
+            2: "Heading outline, from H1 to H6"
+            3: "Canonical, noindex and X-Robots-Tag"
+            4: "Language, hreflang and Open Graph"
+            5: "JSON-LD structured data"
+            6: "Images without alt or dimensions"
         site:
             title: "Site structure"
-            text: "Click depth, inbound links, broken links, duplicate titles and content, orphan pages from the sitemap."
-    note: "SemSpider follows robots.txt and does not run the pages' JavaScript: the load time shown is an estimate, from the HTML then the resources downloaded in parallel."
+            1: "Click depth from the home page"
+            2: "Inbound internal links"
+            3: "Broken links and links to redirects"
+            4: "Duplicate titles, descriptions and content"
+            5: "Orphan sitemap pages"
+            6: "Pages missing from the sitemap"
+    thresholds:
+        kicker: "Benchmarks"
+        heading: "Public thresholds, not impressions"
+        text: "Every colour in the table comes from a fixed, known threshold. The same threshold is used everywhere: table, detail and issue list."
+        measure: "Measure"
+        limit: "Threshold"
+        source: "Benchmark"
+        ttfb:
+            name: "Time to first byte (TTFB)"
+            source: "web.dev (Google): “good” up to 800 ms"
+        load:
+            name: "Estimated load time"
+            source: "Beyond 3 s, mobile bounce rates climb (Google study)"
+        weight:
+            name: "Page weight"
+            source: "Lighthouse penalises total weight from about 2.6 MB"
+        image:
+            name: "Image weight"
+            source: "Common optimisation benchmark for a web image"
+        title:
+            name: "Title length (characters)"
+            source: "Google shows about 600 px, i.e. 55 to 60 characters"
+        meta:
+            name: "Meta description length (characters)"
+            source: "Google cuts the snippet at about 155 to 160 characters"
+        words:
+            name: "Words of visible text"
+            source: "Below this, the page may be judged thin"
+        depth:
+            name: "Clicks from the home page"
+            source: "Beyond this, the page is crawled less and gets fewer links"
+    inside:
+        kicker: "Under the hood"
+        title: "A light crawler, honest about what it measures"
+        browser:
+            title: "Your browser drives"
+            text: "It keeps the page queue and asks the server for small batches. No crawl is stored: the results stay with you."
+        network:
+            title: "Real measures"
+            text: "The HTML and every resource are downloaded as a browser would, in parallel and compressed. A shared file is measured only once."
+        polite:
+            title: "Polite to the website"
+            text: "robots.txt is followed, simultaneous connections are limited and no private network address can be reached."
+        honest:
+            title: "No hidden approximation"
+            text: "The pages' JavaScript is not run: the load time is an estimate, shown as such."
+    discord:
+        kicker: "Community"
+        title: "Join Net Labs on Discord"
+        text: "Ask questions about your analyses, discuss SEO, GEO and AI, and get early access to new tool features."
+        button: "Join the Discord"
+    cta:
+        title: "Ready to put your website under the microscope?"
+        text: "Up to %max% pages, live results, CSV export. No account."
+        button: "Start a crawl"
+    tech: "Built with"
 
 form:
     url_label: "Website address"
@@ -32,7 +142,6 @@ crawl:
     sitemap: "{0}No sitemap found|{1}1 page in the sitemap|]1,Inf[%count% pages in the sitemap"
     limit: "%max% pages at most"
     export_csv: "CSV export"
-    new: "New crawl"
     noscript: "The crawl runs in your browser: please enable JavaScript."
     error:
         invalid: "This address is not valid."
@@ -45,9 +154,11 @@ js:
     status:
         running: "Crawling: %done% pages analysed out of %found% found"
         paused: "Paused: %done% pages analysed out of %found% found"
+        throttled: "The website asks to slow down: resuming in %s% s, one page at a time"
         done: "Done: %done% pages analysed"
         stopped: "Stopped: %done% pages analysed out of %found% found"
         limit: "%max% page limit reached"
+        blocked: "%n% blocked by robots.txt (not counted)"
     pause: "Pause"
     resume: "Resume"
     stop: "Stop"
@@ -56,6 +167,7 @@ js:
         all: "All pages"
         errors: "Pages with an error"
         warnings: "Pages with a warning"
+        reset: "Show all pages"
     empty: "No page matches the filter."
     col:
         url: "Page"
@@ -144,6 +256,13 @@ js:
         more: "and %n% more"
         yes: "yes"
         no: "no"
+        why: "Why"
+        fix: "Fix"
+        blocking_scripts: "Render-blocking scripts"
+        blocking_styles: "Render-blocking CSS"
+        legacy_images: "Images to convert (WebP, AVIF)"
+        short_cache: "Resources without long cache"
+        no_cache: "no cache"
     synth:
         pages: "Pages analysed"
         weight: "Median weight"
@@ -151,7 +270,10 @@ js:
         load: "Median load"
         errors: "Pages with an error"
         composition: "Weight breakdown, all pages"
-        issues: "Most frequent issues"
+        issues: "Fix first"
+        score: "Site health"
+        score_hint: "Average of the pages: each starts at 100 and loses %error% points per error and %warning% per warning."
+        share: "%n% pages · %p%%"
         no_issue: "No issue found so far."
     unit:
         b: "B"
@@ -159,6 +281,8 @@ js:
         mb: "MB"
         ms: "ms"
         s: "s"
+        h: "h"
+        d: "d"
     csv:
         title_length: "Title length"
         meta_length: "Meta description length"
@@ -192,6 +316,11 @@ issue:
     broken_resources: "Resources in error"
     mixed_content: "Mixed content (http resources on an https page)"
     incomplete: "Incomplete measure (resources too slow)"
+    blocking_scripts: "Render-blocking scripts in the head"
+    blocking_styles: "Too many render-blocking CSS files (over 3)"
+    legacy_images: "Images to convert to WebP or AVIF"
+    short_cache: "Short browser cache (under a week)"
+    lazy_first_image: "First image lazy-loaded (delays LCP)"
     duplicate_title: "Duplicate title"
     duplicate_meta: "Duplicate meta description"
     duplicate_content: "Same content as another page"
@@ -201,7 +330,134 @@ issue:
     not_in_sitemap: "Missing from the sitemap"
     deep: "Deep (more than 3 clicks from the home page)"
 
+help:
+    http_error:
+        why: "The page does not load: visitors and search engines hit an error."
+        fix: "Restore the page, or 301-redirect it to the closest page and fix the links pointing to it."
+    redirect:
+        why: "Information: this address redirects. Only the links still pointing to it are a problem (see “Links to redirects”)."
+        fix: "Keep the redirect for external links and point internal links to the final address."
+    blocked:
+        why: "Information: robots.txt forbids crawling this address, so it is analysed neither here nor by search engines."
+        fix: "Nothing to do if intended (admin, internal search); otherwise remove the Disallow rule."
+    noindex:
+        why: "Information: the page is excluded from search results, often on purpose (legal notice, cart, internal search). Its tags and content are therefore not checked."
+        fix: "Nothing to do if intended; otherwise remove noindex from the meta robots tag or the X-Robots-Tag header."
+    canonical_elsewhere:
+        why: "Information: the page names another address as the version to index (duplicate, parameters, pagination). Its tags and content are therefore not checked."
+        fix: "Nothing to do if intended; otherwise point the canonical to the page itself."
+    title_missing:
+        why: "The title is the heading shown in search results; without it, Google makes one up."
+        fix: "Write a unique title of 30 to 60 characters, main topic first."
+    title_short:
+        why: "A very short title describes the page poorly and wastes available space."
+        fix: "Extend it to 30 to 60 characters: topic, detail, possibly the brand."
+    title_long:
+        why: "Beyond about 60 characters, Google truncates the title in its results."
+        fix: "Trim it to 60 characters, keeping the important words first."
+    meta_missing:
+        why: "Without a meta description, Google writes its own snippet, often less compelling."
+        fix: "Write 70 to 160 characters that sum up the page and invite the click."
+    meta_short:
+        why: "A very short description is often replaced by Google."
+        fix: "Extend it to 70 to 160 characters."
+    meta_long:
+        why: "Beyond about 160 characters, the snippet is truncated."
+        fix: "Tighten it to 160 characters, essentials first."
+    h1_missing:
+        why: "The H1 states the page topic to visitors and search engines alike."
+        fix: "Add a single H1 that carries the main topic."
+    h1_multiple:
+        why: "Several H1s blur the page's main topic."
+        fix: "Keep one H1 and turn the others into H2s."
+    heading_skip:
+        why: "A skipped level (an H3 right after the H1) breaks the hierarchy read by search engines and screen readers."
+        fix: "Follow the H1, H2, H3 order without skipping a level."
+    thin_content:
+        why: "Under 300 words rarely covers a topic: the page may be judged thin."
+        fix: "Expand the content, merge the page with a close one, or set it to noindex if it is a utility page."
+    lang_missing:
+        why: "Without a lang attribute, search engines and screen readers must guess the language."
+        fix: "Add lang=\"en\" (or the page language) to the html tag."
+    viewport_missing:
+        why: "Without a meta viewport, the page shows on mobile as a shrunk desktop version."
+        fix: "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> to the head."
+    image_alt_missing:
+        why: "Alternative text describes the image to search engines and screen readers."
+        fix: "Add a descriptive alt, or alt=\"\" for a purely decorative image."
+    image_heavy:
+        why: "Heavy images are the first cause of slow pages."
+        fix: "Resize them to their display size and compress them, ideally as WebP or AVIF."
+    image_dimensions:
+        why: "Without width and height, the page shifts while loading (CLS)."
+        fix: "Set width and height on every image, or reserve their space in CSS with aspect-ratio."
+    heavy_page:
+        why: "A heavy page loads slowly, especially on mobile."
+        fix: "Start with the largest items of the Performance detail: images, fonts, scripts."
+    slow_ttfb:
+        why: "The server takes too long to answer: everything else waits."
+        fix: "Enable page caching (server or CDN), lighten database queries, check the hosting."
+    slow_load:
+        why: "Beyond 3 s, a growing share of mobile visitors leaves."
+        fix: "Cut resource weight and TTFB; the Performance detail shows what to work on."
+    many_requests:
+        why: "Each request adds waiting time, especially on mobile."
+        fix: "Bundle CSS and JS, remove unused scripts, inline icons as SVG."
+    no_compression:
+        why: "Uncompressed HTML weighs 3 to 5 times more."
+        fix: "Enable gzip or brotli on the server (mod_deflate, hosting settings)."
+    broken_resources:
+        why: "Images, styles or scripts are missing: the page may render badly."
+        fix: "Fix or remove the failing addresses listed in the detail."
+    mixed_content:
+        why: "Browsers block http resources on an https page."
+        fix: "Switch these addresses to https."
+    incomplete:
+        why: "Some resources did not answer in time: weight and load time are underestimated."
+        fix: "Run the crawl again; if it persists, check these resources, probably very slow."
+    blocking_scripts:
+        why: "A head script without defer or async blocks rendering while it downloads and runs."
+        fix: "Add defer (or async for an independent script), or move the script to the end of the page."
+    blocking_styles:
+        why: "Each stylesheet in the head delays the first render."
+        fix: "Bundle CSS into one or two files and defer those not needed for the first screen."
+    legacy_images:
+        why: "At equal quality, WebP and AVIF often weigh 25 to 50% less than JPEG or PNG."
+        fix: "Convert these images to WebP or AVIF, with the picture tag to keep a fallback format."
+    short_cache:
+        why: "Without long caching, the browser downloads styles, scripts and images again on every visit."
+        fix: "Serve static files with Cache-Control: max-age of at least a week, ideally a year with versioned names."
+    lazy_first_image:
+        why: "The first image is often the largest element on screen (LCP): lazy-loaded, it arrives late."
+        fix: "Remove loading=\"lazy\" from images visible on load and keep it for those further down."
+    duplicate_title:
+        why: "Identical titles stop search engines from telling the pages apart."
+        fix: "Make each title unique and specific to its page."
+    duplicate_meta:
+        why: "Identical descriptions help neither search engines nor users choose."
+        fix: "Write a description specific to each page."
+    duplicate_content:
+        why: "Two pages with identical text compete; search engines keep only one."
+        fix: "Merge the pages, redirect one to the other or add a canonical."
+    broken_links:
+        why: "Links to pages in error frustrate visitors and waste crawling."
+        fix: "Fix the links listed in the detail, or redirect the missing pages."
+    redirect_links:
+        why: "A link to a redirect forces a detour on every click and every crawl."
+        fix: "Replace these links with the final address shown in the detail."
+    orphan:
+        why: "No page of the site links here: search engines find it poorly and rate it as minor."
+        fix: "Add links from related pages: menu, category, related articles."
+    not_in_sitemap:
+        why: "The sitemap helps search engines find and revisit important pages."
+        fix: "Add the page to the sitemap, or check it really should be indexed."
+    deep:
+        why: "More than 3 clicks from the home page, a page is crawled less and gets fewer links."
+        fix: "Bring it closer: links from the home page, categories or the most visited pages."
+
 legal:
+    meta_title: "Legal notice and privacy"
+    meta_description: "Legal notice for SemSpider, the Net Labs technical SEO audit tool: publisher, hosting provider, personal data and intellectual property."
     title: "Legal notice"
     publisher:
         heading: "Publisher"
@@ -212,7 +468,8 @@ legal:
         text: "OVH SAS<br>2 rue Kellermann, 59100 Roubaix, France<br>ovhcloud.com"
     data:
         heading: "Personal data"
-        no_account: "SemSpider has no user accounts, sets no tracking cookies and uses no analytics."
+        no_account: "SemSpider has no user accounts."
+        analytics: "Site traffic is measured with Yandex Metrika (Yandex LLC): cookies (_ym_*) record page views, clicks and the course of visits (Webvisor) in order to improve the service. This data is processed by Yandex, including outside the European Union."
         third_parties: "The pages of the website entered are downloaded by the SemSpider server; the results are only kept in your browser. Only the measures of shared files (stylesheets, scripts, images) and the website's robots.txt stay cached for one hour."
     ip:
         heading: "Intellectual property"
