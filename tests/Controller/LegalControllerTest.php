@@ -14,7 +14,7 @@ final class LegalControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Mentions légales');
         self::assertSelectorTextContains('.prose', 'Éditeur Test');
-        self::assertSelectorTextContains('.prose', 'OVH SAS');
+        self::assertSelectorTextContains('.prose', 'IKOULA NET');
         self::assertSelectorExists('.site-footer a[href="/fr/legal"]');
 
         $client->request('GET', '/en/legal');

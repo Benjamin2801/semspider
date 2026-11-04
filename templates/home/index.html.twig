@@ -124,7 +124,7 @@
     <div class="home-sources is-tech">
         <p class="home-kicker">{{ 'home.tech'|trans }}</p>
         <ul class="sources-list">
-            {% for name, tech in {OVHcloud: ['ovh', null], PHP: ['php', '#777BB4'], Symfony: ['symfony', null], 'HttpClient': [null, '#047857'], Twig: [null, '#8DAA2B'], PHPUnit: [null, '#3C9CD7'], PHPStan: [null, null], 'GitHub Actions': [null, '#2088FF'], Docker: [null, '#2496ED']} %}
+            {% for name, tech in {PHP: ['php', '#777BB4'], Symfony: ['symfony', null], 'HttpClient': [null, '#047857'], Twig: [null, '#8DAA2B'], PHPUnit: [null, '#3C9CD7'], PHPStan: [null, null], 'GitHub Actions': [null, '#2088FF'], Docker: [null, '#2496ED']} %}
                 <li{% if tech[1] %} style="--brand: {{ tech[1] }}"{% endif %}>
                     {%- if tech[0] %}{{ source('home/logos/' ~ tech[0] ~ '.svg')|replace({'<svg role="img" ': '<svg class="source-logo" aria-hidden="true" focusable="false" '})|raw }}
                     {%- else %}<span class="source-mark" aria-hidden="true">{{ name|first }}</span>{% endif -%}

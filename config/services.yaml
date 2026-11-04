@@ -1,21 +1,21 @@
 # yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
 
 parameters:
-    # Exigence de route pour {_locale}, Ã  garder alignÃ©e avec framework.enabled_locales.
+    # Exigence de route pour {_locale}, à garder alignée avec framework.enabled_locales.
     app.locales: 'fr|en'
 
-    # Pages analysÃ©es au plus par crawl.
+    # Pages analysées au plus par crawl.
     app.crawl.max_pages: 500
-    # Pages analysÃ©es par requÃªte : le navigateur enchaÃ®ne les lots, chacun bien en dessous des 165 s d'OVH.
+    # Pages analysées par requête : le navigateur enchaîne les lots, chacun bien en dessous du délai du serveur.
     app.crawl.batch_size: 4
-    # Ressources mesurÃ©es au plus par page (images, CSS, JS, polices).
+    # Ressources mesurées au plus par page (images, CSS, JS, polices).
     app.crawl.max_resources: 150
     # Identifiable (SemSpider, robots.txt), mais présenté comme un Chrome récent : les serveurs adaptent ce qu'ils
     # envoient au navigateur (Google Fonts : woff2 découpés par alphabet au lieu de TrueType complets), et les
     # mesures doivent être celles d'un vrai visiteur.
     app.crawl.user_agent: 'Mozilla/5.0 (compatible; SemSpider/1.0; +https://net-labs.fr/semspider) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
 
-    # Ã‰diteur affichÃ© dans les mentions lÃ©gales (variables LEGAL_* de .env.local / deploy/prod.env).
+    # Éditeur affiché dans les mentions légales (variables LEGAL_* de .env.local / deploy/prod.env).
     app.legal:
         name: '%env(LEGAL_PUBLISHER)%'
         address: '%env(LEGAL_ADDRESS)%'
@@ -34,8 +34,8 @@ services:
     App\:
         resource: '../src/'
 
-    # L'adresse Ã  crawler vient de l'internaute : aucune requÃªte ne doit atteindre le rÃ©seau privÃ© du serveur
-    # (127.0.0.1, 10.x, 192.168.xâ€¦), mÃªme aprÃ¨s une redirection ou un nom de domaine qui y mÃ¨ne.
+    # L'adresse à crawler vient de l'internaute : aucune requête ne doit atteindre le réseau privé du serveur
+    # (127.0.0.1, 10.x, 192.168.x…), même après une redirection ou un nom de domaine qui y mène.
     app.crawl.http_client:
         class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
         arguments: ['@http_client']
@@ -43,7 +43,7 @@ services:
 
 when@test:
     services:
-        # Le faux site n'a pas d'adresse IP : pas de vÃ©rification rÃ©seau pendant les tests (voir NetworkGuardTest).
+        # Le faux site n'a pas d'adresse IP : pas de vérification réseau pendant les tests (voir NetworkGuardTest).
         app.crawl.http_client:
             alias: http_client
 

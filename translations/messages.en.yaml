@@ -130,7 +130,7 @@ home:
         title: "Ready to put your website under the microscope?"
         text: "Up to %max% pages, live results, CSV export. No account."
         button: "Start a crawl"
-    tech: "Built with"
+    tech: "Project technologies"
 
 form:
     url_label: "Website address"
@@ -465,7 +465,7 @@ legal:
         contact: "Contact:"
     host:
         heading: "Hosting"
-        text: "OVH SAS<br>2 rue Kellermann, 59100 Roubaix, France<br>ovhcloud.com"
+        text: "IKOULA NET<br>2 Cité Paradis, 75010 Paris, France<br>+33 1 84 01 02 50<br>ikoula.com"
     data:
         heading: "Personal data"
         no_account: "SemSpider has no user accounts."

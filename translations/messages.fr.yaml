@@ -131,7 +131,7 @@ home:
         title: "Prêt à passer votre site au crible ?"
         text: "Jusqu'à %max% pages, résultats en direct, export CSV. Sans compte."
         button: "Lancer un crawl"
-    tech: "Construit avec"
+    tech: "Technologies du projet"
 
 form:
     url_label: "Adresse du site"
@@ -468,7 +468,7 @@ legal:
         contact: "Contact :"
     host:
         heading: "Hébergeur"
-        text: "OVH SAS<br>2 rue Kellermann, 59100 Roubaix, France<br>ovhcloud.com"
+        text: "IKOULA NET<br>2 Cité Paradis, 75010 Paris, France<br>+33 1 84 01 02 50<br>ikoula.com"
     data:
         heading: "Données personnelles"
         no_account: "SemSpider ne propose pas de compte."
