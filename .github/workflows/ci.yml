@@ -15,7 +15,7 @@ jobs:
             # Même version de PHP que l'hébergement de production.
             - uses: shivammathur/setup-php@v2
               with:
-                  php-version: '8.2'
+                  php-version: '8.4'
                   coverage: none
 
             - uses: actions/cache@v6

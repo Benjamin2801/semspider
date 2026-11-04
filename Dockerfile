@@ -1,5 +1,5 @@
-# Environnement de développement : PHP 8.2, version minimale du projet, serveur intégré de PHP.
-FROM php:8.2-cli
+# Environnement de développement : PHP 8.4 comme en production, serveur intégré de PHP.
+FROM php:8.4-cli
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git unzip libicu-dev \
