@@ -55,13 +55,18 @@ jobs:
 
         steps:
             # La clé ne peut lancer que le déploiement : le serveur impose la commande (authorized_keys).
-            - env:
+            # Le script doit annoncer ce dépôt : la clé d'un autre projet déploierait le mauvais site.
+            # shell: bash active pipefail, un échec du déploiement fait aussi échouer le job.
+            - shell: bash
+              env:
                   SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
                   KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
                   HOST: ${{ secrets.VPS_HOST }}
+                  PROJECT: ${{ github.event.repository.name }}
               run: |
                   install -m 700 -d ~/.ssh
                   printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
                   chmod 600 ~/.ssh/id_ed25519
                   printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-                  ssh -T "deploy@$HOST"
+                  ssh -T "deploy@$HOST" | tee deploy.log
+                  grep -qF "DÉPLOIEMENT TERMINÉ : $PROJECT" deploy.log
